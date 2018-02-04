@@ -4,47 +4,133 @@
     <meta charset="utf-8">
     <title>D3 Test</title>
     <script type="text/javascript" src="d3/d3.js"></script>
+    <style>
+        div.bar {
+            display: inline-block;
+            width: 20px;
+            height: 75px;
+            background-color: teal;
+            margin-right: 2px;
+        }
+    </style>
 </head>
 <body>
-    <div id="div1" />
+    <div id="#rects"></div>
     <script type="text/javascript">
-        var addRectangle = function(x,y,fill) {
-            d3.select("svg")
-                .append("rect")
-                .attr("x", x)
-                .attr("y", y)
-                .attr("width", 50)
-                .attr("height", 50)
-                .attr("fill", fill);
-        }
+        var w = 500;
+        var h = 100;
+        var barPadding = 1;
 
         d3.csv("data.csv", function(data) {
-            d3.select("#div1")
-            .selectAll("p")
-            .data(data)
-            .enter()
-            .append("p")
-            .text(function(d) { 
-                return d.data; 
-            })
-            .style("color", function(d) {
-                if (d>=15) {
-                    return "green";
-                } else {
-                    return "black";
-                }
-            });
-
-            d3.select("#div1")
-                .append("svg")
-                .attr("width", 500)
-                .attr("height", 100);
+            d3.select("body")
+                .selectAll("div")
+                .data(data)
+                .enter()
+                .append("div")
+                .attr("class", "bar")
+                .style("height", function(d) {
+                    var barHeight = 2 * d.data;
+                    return barHeight + "px";
+                });
+            d3.select("body").append("br");
             
-            addRectangle(0,0,"rgba(128, 0, 128, 1.0)");
-            addRectangle(20,5,"rgba(0, 0, 255, 0.75)");
-            addRectangle(40,10,"rgba(0, 255, 0, 0.5)");
-            addRectangle(60,15,"rgba(0, 255, 0, 0.5)");
-            addRectangle(80,20,"rgba(255, 0, 0, 0.1)");
+            var svg = d3.select("body")
+                .append("svg")
+                .attr("width", w)
+                .attr("height", h);
+        
+            svg.selectAll("rect")
+                .data(data)
+                .enter()
+                .append("rect")
+                .attr("x", function(d, i) {
+                    return i * (w / data.length);
+                })
+                .attr("y", function(d) {
+                    return h - d.data*2;
+                })
+                .attr("width", w / data.length - barPadding)
+                .attr("height", function(d) {
+                    return d.data*2;
+                })
+                .attr("fill","teal");
+            
+            svg.selectAll("text")
+                .data(data)
+                .enter()
+                .append("text")
+                .text(function(d) {
+                    return d.data;
+                })
+                .attr("x", function(d,i) {
+                    return i * (w / data.length) + (w / data.length - barPadding) / 2;
+                })
+                .attr("y", function(d) {
+                    return h - (d.data * 2) + 12;
+                })
+                .attr("fill", "white")
+                .attr("font-size", "10px")
+                .attr("text-anchor", "middle");
+            
+            d3.csv("data2d.csv", function(data) {
+                d3.select("body").append("br");
+                d3.select("body").append("br");
+                var padding = 15;
+                var xScale = d3.scaleLinear()
+                                .domain([0, d3.max(data, function(d) { return d.x; })])
+                                .range([padding, w - padding]);
+                
+                var yScale = d3.scaleLinear()
+                                .domain([0, d3.max(data, function(d) { return d.y; })])
+                                .range([h - padding, padding]);
+                
+                var rScale = d3.scaleLinear()
+                                .domain([0, d3.max(data, function(d) { return d.y; })])
+                                .range([2,6]);
+
+                // New SVG-element added for scatter-plot
+                var svg = d3.select("body")
+                            .append("svg")
+                            .attr("width", w)
+                            .attr("height", h);
+
+                svg.selectAll("circle")
+                    .data(data)
+                    .enter()
+                    .append("circle")
+                    .attr("cx", function(d) {
+                        return xScale(d.x);
+                    })
+                    .attr("cy", function(d) {
+                        return yScale(d.y);
+                    })
+                    .attr("r", function(d) {
+                        return rScale(d.y);
+                    });
+                
+                // Text elements added to label the data points
+                svg.selectAll("text")
+                    .data(data)
+                    .enter()
+                    .append("text")
+                    .text(function(d) {
+                        return d.x + "," + d.y;
+                    })
+                    .attr("x", function(d) {
+                        return xScale(d.x)
+                    })
+                    .attr("y", function(d) {
+                        return yScale(d.y);
+                    })
+                    .attr("font-size", "11px")
+                    .attr("fill", "red");
+                
+                var xAxis = d3.axisBottom(xScale);
+                svg.append("g")
+                    .attr("class", "axis")
+                    .attr("transform", "translate(0," + (h - padding) + ")")
+                    .call(xAxis);
+            });
         });
     </script>
 </body>

@@ -4,22 +4,42 @@
     <meta charset="utf-8">
     <title>D3 Test</title>
     <script type="text/javascript" src="d3/d3.js"></script>
-    <style>
-        div.bar {
-            display: inline-block;
-            width: 20px;
-            height: 75px;
-            background-color: teal;
-            margin-right: 2px;
-        }
-    </style>
+    <link rel="stylesheet" href="site.css">
 </head>
 <body>
     <div id="#rects"></div>
     <script type="text/javascript">
         var w = 500;
-        var h = 100;
+        var h = 120;
         var barPadding = 1;
+        
+        // Coordinate and color-values for five rectangle objects.
+        var squareCoordinates = [{x:0, y:0, color:"rgba(128, 0, 128, 1.0)"}, {x:20, y:5, color:"rgba(0, 0, 255, 0.75)"},
+                                {x:40, y:10, color:"rgba(0, 255, 0, 0.5)"}, {x:60, y:15, color:"rgba(255, 255, 0, 0.25)"},
+                                {x:60, y:15, color:"rgba(255, 0, 0, 0.1)"}];
+
+        var svg = d3.select("body")
+                    .append("svg")
+                    .attr("width", w)
+                    .attr("height", h);
+        
+        svg.selectAll("rect")
+            .data(squareCoordinates)
+            .enter()
+            .append("rect")
+            .attr("x", function(d) {
+                return d.x;
+            })
+            .attr("y", function(d) {
+                return d.y;
+            })
+            .attr("width", h*0.5)
+            .attr("height", h*0.5)
+            .attr("fill", function(d) {
+                return d.color;
+            });
+        
+        d3.select("body").append("br");
 
         d3.csv("data.csv", function(data) {
             d3.select("body")
@@ -32,6 +52,7 @@
                     var barHeight = 2 * d.data;
                     return barHeight + "px";
                 });
+            
             d3.select("body").append("br");
             
             var svg = d3.select("body")
@@ -74,14 +95,13 @@
             
             d3.csv("data2d.csv", function(data) {
                 d3.select("body").append("br");
-                d3.select("body").append("br");
-                var padding = 15;
+                var padding = 20;
                 var xScale = d3.scaleLinear()
-                                .domain([0, d3.max(data, function(d) { return d.x; })])
+                                .domain([0, d3.max(data, function(d) { return parseInt(d.x); })])
                                 .range([padding, w - padding]);
                 
                 var yScale = d3.scaleLinear()
-                                .domain([0, d3.max(data, function(d) { return d.y; })])
+                                .domain([0, d3.max(data, function(d) { return parseInt(d.y); })])
                                 .range([h - padding, padding]);
                 
                 var rScale = d3.scaleLinear()
@@ -130,6 +150,12 @@
                     .attr("class", "axis")
                     .attr("transform", "translate(0," + (h - padding) + ")")
                     .call(xAxis);
+                
+                var yAxis = d3.axisLeft(yScale).ticks(4);
+                svg.append("g")
+                    .attr("class", "axis")
+                    .attr("transform", "translate(" + padding + ",0)")
+                    .call(yAxis);
             });
         });
     </script>

@@ -1,3 +1,15 @@
+h1 {
+    text-align: center;
+}
+
+div {
+    text-align: center;
+}
+
+svg {
+    display: block;
+}
+
 div.bar {
     display: inline-block;
     width: 20px;

@@ -70,7 +70,7 @@
                 return d.color;
             });
 
-        d3.csv("data2d.csv", function(data) {
+        d3.csv("data/data2d.csv", function(data) {
             var padding = 20;
             var xScale = d3.scaleLinear()
                             .domain([0, d3.max(data, function(d) { return parseInt(d.x); })])
@@ -135,7 +135,7 @@
             
             d3.select("body").append("br");
 
-            d3.csv("pres.csv", function(data) {
+            d3.csv("data/pres.csv", function(data) {
                 drawBarChartWithPresData(data,w,h, barPadding, "#presBars");
                 drawJitterPlotWithPresData(data,w,h, padding, "#presJitter");
                 drawHistogramWithPresData(data,w,h,padding,"#presHist");

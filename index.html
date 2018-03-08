@@ -2,293 +2,207 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>D3 Test</title>
+    <title>Week 6</title>
     <script type="text/javascript" src="libs/d3/d3.js"></script>
-    <script type="text/javascript" src="libs/jquery/jquery-3.3.1.min.js"></script>
-    <link rel="stylesheet" href="site.css">
-    <link rel="stylesheet" href="libs/bootstrap/css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="site.css">
 </head>
 <body>
-    <div class="row">
-        <div class="col-md-6">
-            <h1>Misc</h1>
-            <div id="rects"></div>
-        </div>
-        <div class="col-md-6">
-            <h1>Presidents</h1>
-            <div id="presBars"></div>
-        </div>
-    </div>
-    <br />
-    <div class="row">
-        <div class="col-md-6">
-            <div id="scatter"></div>
-        </div>
-        <div class="col-md-6">
-            <div id="presJitter"></div>
-        </div>
-    </div>
-    <br />
-    <div class="row">
-            <div class="col-md-6">
-                <div id="tobefilled"></div>
-            </div>
-            <div class="col-md-6">
-                <div id="presHist"></div>
-            </div>
-        </div>
+
+    <article>
+        <h2>This dataset includes reported murders to the New York City Police Department (NYPD) in 2016. 
+            Select points in the map to show hourly crime distribution.</h2>
+    </article>
+    <div id="mapContainer" class="svgContainer"></div>
+    <div id="barchartContainer" class="svgContainer"></div>
+    <p>Data from: <a href="https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i">
+        https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i</a></p>
 
     <script type="text/javascript">
-        var w = 600;
-        var h = 120;
-        var barPadding = 1;
-        var firstX = w/3;
-        // Coordinate and color-values for five rectangle objects.
-        var squareCoordinates = [{x:firstX, y:0, color:"rgba(128, 0, 128, 1.0)"}, 
-                                {x:firstX*1.125, y:5, color:"rgba(0, 0, 255, 0.75)"},
-                                {x:firstX*1.25, y:10, color:"rgba(0, 255, 0, 0.5)"}, 
-                                {x:firstX*1.375, y:15, color:"rgba(255, 255, 0, 0.25)"},
-                                {x:firstX*1.5, y:20, color:"rgba(255, 0, 0, 0.1)"}];
+        var h = 400;
+        var w = 500;
+        var padding = 40;
+        var brushCoordinates;
 
-        var svg = d3.select("#rects")
-                    .append("svg")
-                    .attr("width", w)
-                    .attr("height", h);
+        // Init array of hour values from 0 - 24
+        var hoursOfDay = []
+        for (var i = 0; i < 24; i++) { hoursOfDay.push(i); }
+
+        // Define variables for path generation.
+        var projection = d3.geoMercator().translate([w/2, h/2+25]).scale([32000]).center([-73.955752145,40.648265282]);
+        var path = d3.geoPath().projection(projection);
+
+        var color = d3.scaleQuantize().domain([0,4])
+								.range(["rgb(147,85,209)","rgb(131,105,224)","rgb(90,82,249)",
+                                    "rgb(97,150,249","rgb(66,107,244)"]);
+
+        var mapSvg = d3.select("#mapContainer").append("svg").attr("width",w).attr("height",h);
+        var chartSvg = d3.select("#barchartContainer").append("svg").attr("width",w).attr("height",h);
+
+        var xScale = d3.scaleBand().domain(hoursOfDay).rangeRound([padding,w-padding]).paddingInner(0.05);
+        var yScale = d3.scaleLinear().domain([0,20]).range([h - padding, padding]);
         
-        svg.selectAll("rect")
-            .data(squareCoordinates)
-            .enter()
-            .append("rect")
-            .attr("x", function(d) {
-                return d.x;
-            })
-            .attr("y", function(d) {
-                return d.y;
-            })
-            .attr("width", h*0.5)
-            .attr("height", h*0.5)
-            .attr("fill", function(d) {
-                return d.color;
-            });
-
-        d3.csv("data/data2d.csv", function(data) {
-            var padding = 20;
-            var xScale = d3.scaleLinear()
-                            .domain([0, d3.max(data, function(d) { return parseInt(d.x); })])
-                            .range([padding, w - padding]);
-                
-            var yScale = d3.scaleLinear()
-                            .domain([0, d3.max(data, function(d) { return parseInt(d.y); })])
-                            .range([h, padding]);
-                
-            var rScale = d3.scaleLinear()
-                            .domain([0, d3.max(data, function(d) { return d.y; })])
-                            .range([2,6]);
-
-            // New SVG-element added for scatter-plot
-            var svg = d3.select("#scatter")
-                        .append("svg")
-                        .attr("width", w)
-                        .attr("height", h);
-
-            svg.selectAll("circle")
-                .data(data)
-                .enter()
-                .append("circle")
-                .attr("cx", function(d) {
-                    return xScale(d.x);
-                })
-                .attr("cy", function(d) {
-                    return yScale(d.y);
-                })
-                .attr("r", function(d) {
-                    return rScale(d.y);
+        d3.json("data/boroughs.json", function(json) {
+            mapSvg.selectAll("path").data(json.features).enter().append("path").attr("d",path)
+                .attr("fill", function(d,i) {
+                    return color(i);
                 });
-                
-            // Text elements added to label the data points
-            svg.selectAll("text")
-                .data(data)
-                .enter()
-                .append("text")
-                .text(function(d) {
-                    return d.x + "," + d.y;
-                })
-                .attr("x", function(d) {
-                    return xScale(d.x)
-                })
-                .attr("y", function(d) {
-                    return yScale(d.y);
-                })
-                .attr("font-size", "11px")
-                .attr("fill", "red");
-                
-            var xAxis = d3.axisBottom(xScale);
-            svg.append("g")
-                .attr("class", "axis")
-                .attr("transform", "translate(0," + (h - padding) + ")")
-                .call(xAxis);
-                
-            var yAxis = d3.axisLeft(yScale).ticks(4);
-            svg.append("g")
-                .attr("class", "axis")
-                .attr("transform", "translate(" + padding + ",0)")
-                .call(yAxis);
             
-            d3.select("body").append("br");
+            d3.csv("data/Crime-Data.csv", function(data) {
+                var circles = mapSvg.selectAll("circle")
+                        .data(data).enter().append("circle")
+                        .attr("cx", function(d) {
+                            return projection([d.Lon, d.Lat])[0];
+                        })
+                        .attr("cy", function(d) {
+                            return projection([d.Lon, d.Lat])[1];
+                        })
+                        .attr("r", 3)
+                        .attr("class", "non_brushed");
 
-            d3.csv("data/pres.csv", function(data) {
-                drawBarChartWithPresData(data,w,h, barPadding, "#presBars");
-                drawJitterPlotWithPresData(data,w,h, padding, "#presJitter");
-                drawHistogramWithPresData(data,w,h,padding,"#presHist");
+                // Append title to map
+                mapSvg.append("text").attr("x", (w / 2)).attr("y", (padding / 2))
+                    .attr("text-anchor", "middle").attr("id","title").text("NYC boroughs");
+                
+                var barData = generateBarChartData(data, hoursOfDay);
+                yScale.domain([0, d3.max(barData, function(d) { return d.count; })]);
+
+                // Append title to barchart
+                chartSvg.append("text").attr("x", (w / 2)).attr("y", (padding / 2))
+                    .attr("text-anchor", "middle").attr("id","title").text("Murders in NYC by time of day");
+
+                chartSvg.selectAll("rect").data(barData, function(d) { return d.hour; })
+                        .enter()
+                        .append("rect")
+                        .attr("x", function(d) {
+                            return xScale(d.hour);
+                        })
+                        .attr("y", function(d) {
+                            return yScale(d.count);
+                        })
+                        .attr("height", function(d) {
+                            return h - yScale(d.count) - padding;
+                        })
+                        .attr("width", xScale.bandwidth())
+                        .attr("fill", "steelblue");
+            
+                var xAxis = d3.axisBottom(xScale).tickValues(hoursOfDay);
+                chartSvg.append("g")
+                    .attr("class", "x axis")
+                    .attr("transform", "translate(0," + (h - padding) + ")")
+                    .call(xAxis);
+            
+                var yAxis = d3.axisLeft(yScale);
+                chartSvg.append("g")
+                    .attr("class", "y axis")
+                    .attr("transform", "translate(" + padding + ",0)")
+                    .call(yAxis);
+                
+                    // Append x-axis label
+                chartSvg.append("text")
+                    .attr("class", "x label")
+                    .attr("text-anchor", "middle")
+                    .attr("y", h - 20)
+                    .attr("x", w/2)
+                    .attr("dy", "1em")
+                    .attr("font-size", "12px")
+                    .text("Hours");
+
+                chartSvg.append("text")
+                    .attr("class", "y label")
+                    .attr("text-anchor", "middle")
+                    .attr("y", -1)
+                    .attr("x", -h/2)
+                    .attr("dy", "1em")
+                    .attr("font-size", "12px")
+                    .attr("transform", "rotate(-90)")
+                    .text("# of Murders Committed");
+
+                // Function for highligting brushed circles.
+                var hightlightBrushedCircles = function() {
+                    if (d3.event.selection != null) {
+                        circles.attr("class", "non_brushed");
+                        brushCoordinates = d3.brushSelection(this);
+
+                        // Style brushed circles
+                        circles.filter(function() {
+                            var cx = d3.select(this).attr("cx"),
+                                cy = d3.select(this).attr("cy");
+
+                            return isBrushed(brushCoordinates,cx,cy);
+                        }).attr("class","brushed");
+                    }
+                }
+
+                var updateBarChart = function() {
+                    if (brushCoordinates) {
+                        var filteredData = filterData();
+                        var newBarChartData = generateBarChartData(filteredData, hoursOfDay);
+
+                        // Update domain of y-scale.
+                        yScale.domain([0, d3.max(newBarChartData, function(d) { return d.count; })]);
+
+                        var bars = chartSvg.selectAll("rect").data(newBarChartData, function(d) { return d.hour; });
+
+                        bars.transition().duration(500)
+                            .attr("x", function(d) {
+                                return xScale(d.hour);
+                            })
+                            .attr("y", function(d) {
+                                return yScale(d.count);
+                            })
+                            .attr("width", xScale.bandwidth())
+                            .attr("height", function(d) {
+                                return h - yScale(d.count) - padding;
+                            })
+                            .attr("fill", "steelblue");
+            
+                        yAxis = d3.axisLeft(yScale);
+                        chartSvg.select(".y.axis").transition().duration(500).call(yAxis);
+                    }
+                }
+
+                var filterData = function() {
+                    var filteredDataset = [];
+
+                    for (var i = 0; i < data.length; i++) {
+                        var projectedCoords = projection([data[i].Lon, data[i].Lat]);
+                        if (isBrushed(brushCoordinates, projectedCoords[0], projectedCoords[1])) {
+                            filteredDataset.push(data[i]);
+                        }
+                    }
+
+                    return filteredDataset;
+                }
+
+                var brush = d3.brush().on("brush", hightlightBrushedCircles).on("end", updateBarChart);
+                mapSvg.append("g").call(brush);
             });
         });
 
-        var drawHistogramWithPresData = function(data,w,h,padding,id) {
-            var numberOfBins = 8;
-            var xScale = d3.scaleLinear()
-                            .domain([0, d3.max(data, function(d) { return parseInt(d.days); })])
-                            .range([padding, w - padding]);
-            
-            var bins = generateHistogramBins(data, numberOfBins);
-
-            var yScale = d3.scaleLinear()
-                            .domain([0, d3.max(bins, function(b) { return b.count; })])
-                            .range([h, padding]);
-
-            // New SVG-element added for histogram
-            var svg = d3.select(id)
-                        .append("svg")
-                        .attr("width", w)
-                        .attr("height", h);
-            
-            svg.selectAll("rect")
-                .data(bins)
-                .enter()
-                .append("rect")
-                .attr("x", function(b) { return xScale(b.x0) + 1; })
-                .attr("y", function(b) { return yScale(b.count) - padding; })
-                .attr("width", function(b) {
-                    return xScale(b.x1) - xScale(b.x0) - 2;
-                })
-                .attr("height", function(b) {
-                    return h - yScale(b.count);
-                })
-                .attr("fill","teal");
-
-            var tickValues = []
-            for (var i = 0; i < bins.length; i++) { tickValues.push(bins[i].x0); }
-
-            var xAxis = d3.axisBottom(xScale).tickValues(tickValues);
-            svg.append("g")
-                .attr("class", "axis")
-                .attr("transform", "translate(0," + (h - padding) + ")")
-                .call(xAxis);
-            
-            var yAxis = d3.axisLeft(yScale).ticks(5);
-            svg.append("g")
-                .attr("class", "axis")
-                .attr("transform", "translate(" + padding + ", -" + padding + ")")
-                .call(yAxis);
-        }
-
-        var generateHistogramBins = function(data,ticks) {
-            var max = d3.max(data, function(d) { return parseInt(d.days); });
-            var binWidth = max/ticks;
-            var bins = [{ x0: 0, x1:binWidth, count:0}];
-            for (var i = 1; i < ticks; i++) {
-                var x0 = bins[i-1].x1;
-                bins.push({ x0: x0, x1: x0+binWidth, count:0}) 
-            }
+        var generateBarChartData = function(data, hourValues) {
+            var barData = {};
+            for (var i = 0; i < hourValues.length; i++) { barData[hourValues[i]] = 0; }
 
             for (var i = 0; i < data.length; i++) {
-                var binIndex = Math.floor((data[i].days / max) * ticks);
-                if (binIndex == ticks) {
-                    binIndex--;
-                }
-                
-                bins[binIndex].count += 1;
+                var dataHour = data[i].Hour;
+                barData[dataHour]++;
             }
-            
-            return bins;
+
+            var barDataArray = []
+            for (var i = 0; i < hourValues.length; i++) {
+                barDataArray.push({ hour: hourValues[i], count: barData[hourValues[i]] });
+            }
+
+            return barDataArray;
         }
 
-        var drawJitterPlotWithPresData = function(data,w,h,padding,id) {
-            var xScale = d3.scaleLinear()
-                            .domain([0, d3.max(data, function(d) { return parseInt(d.days); })])
-                            .range([padding, w - padding]);
-            
-            // New SVG-element added for jitter-plot
-            var svg = d3.select(id)
-                        .append("svg")
-                        .attr("width", w)
-                        .attr("height", h);
+        var isBrushed = function(brushCoordinates, cx, cy) {
+            var x0 = brushCoordinates[0][0];
+            var x1 = brushCoordinates[1][0];
+            var y0 = brushCoordinates[0][1];
+            var y1 = brushCoordinates[1][1];
 
-            svg.selectAll("circle")
-                .data(data)
-                .enter()
-                .append("circle")
-                .attr("cx", function(d) {
-                    return xScale(d.days) + getJitter();
-                })
-                .attr("cy", function(d) {
-                    return (h / 2) + getJitter();
-                })
-                .attr("r", 5)
-                .attr("stroke", "black")
-                .attr("fill", "white");
-            
-            var xAxis = d3.axisBottom(xScale);
-            svg.append("g")
-                .attr("class", "axis")
-                .attr("transform", "translate(0," + (h - padding) + ")")
-                .call(xAxis);
-        }
-
-        var getJitter = function() {
-            var random = Math.random();
-            return [-5, 5][Math.floor(2*random)]*random;
-        }
-
-        var drawBarChartWithPresData = function(data,w,h,barPadding,id) {
-            var height = h*1.5;
-            var svg = d3.select(id)
-                .append("svg")
-                .attr("width", w)
-                .attr("height", height);
-        
-            svg.selectAll("rect")
-                .data(data)
-                .enter()
-                .append("rect")
-                .attr("x", function(d, i) {
-                    return i * (w / data.length);
-                })
-                .attr("y", function(d) {
-                    return h - d.days*2;
-                })
-                .attr("width", w / data.length - barPadding)
-                .attr("height", function(d) {
-                    return d.days*2;
-                })
-                .attr("fill","teal");
-
-            svg.selectAll("text")
-                .data(data)
-                .enter()
-                .append("text")
-                .text(function(d) {
-                    return d.pres;
-                })
-                .attr("x", function(d,i) {
-                    return h*1.05;
-                })
-                .attr("y", function(d,i) {                    
-                    return i * (-1) * (w / data.length);
-                })
-                .attr("fill", "black")
-                .attr("transform", "rotate(90)")
-                .attr("font-size", "10px")
-                .attr("text-anchor", "center");
+            return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1;
         }
     </script>
 </body>

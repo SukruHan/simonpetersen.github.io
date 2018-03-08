@@ -1,19 +1,27 @@
-h1 {
+body {
     text-align: center;
 }
 
-div {
-    text-align: center;
+text {
+    font-family: sans-serif;
 }
 
-svg {
-    display: block;
+article {
+    margin: 0 auto;
+    width: 75%;
 }
 
-div.bar {
+.svgContainer {
     display: inline-block;
-    width: 20px;
-    height: 75px;
-    background-color: teal;
-    margin-right: 2px;
+}
+
+.brushed {
+    fill: #ff3399;
+    stroke: #8e1b54;
+    opacity: 1.0;
+}
+
+.non_brushed {
+    fill: #404040;
+    opacity: 0.5;
 }

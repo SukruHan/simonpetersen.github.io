@@ -32,6 +32,7 @@
             Select a period in the timeline to show the geographical distribution in the map.</h2>
     </article>
     <div id="timelineContainer"></div>
+    <button id="animateButton">Animate!</button>
     <div id="mapContainer"></div>
     <p>Data from: <a href="https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i">
         https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i</a></p>
@@ -42,6 +43,7 @@
         var timelineH = h/2;
         var timelineW = w*2;
         var padding = 40;
+        var paddingR = padding/2;
 
         // Define variables for path generation.
         var projection = d3.geoMercator().translate([w/2, h/1.65]).scale([32000]).center([-73.955752145,40.648265282]);
@@ -102,7 +104,7 @@
                 var xScale = d3.scaleTime()
                     .domain([d3.min(murdersByDate, function(d) { return new Date(d.key); }),
                         d3.max(murdersByDate, function(d) { return new Date(d.key); })])
-                    .range([padding,timelineW]);
+                    .range([padding,timelineW - paddingR]);
 
                 var yScale = d3.scaleLinear().domain([0, d3.max(murdersByDate, function(d) { return d.value; })])
                     .range([timelineH - padding, padding]);
@@ -190,7 +192,22 @@
 
                 var brush = d3.brushX().extent([[padding,padding],[timelineW,timelineH-padding]])
                     .on("brush", brushFilterData);
-                timelineSvg.append("g").call(brush);
+                timelineSvg.append("g").attr("id","brush").call(brush);
+
+                d3.select("#animateButton").on("click", function() {
+                    var graphWidth = timelineW - padding - paddingR;
+                    var width = graphWidth / 11;
+                    var x = [padding, padding + width];
+                    timelineSvg.select("#brush").call(brush.move,x);
+                    var intervalId = setInterval(function() {
+                        if (x[1] < graphWidth) {
+                            x = [x[0] + width, x[1] + width];
+                            timelineSvg.select("#brush").transition().duration(600).call(brush.move,x);
+                        } else {
+                            clearInterval(intervalId);
+                        }
+                    }, 1000);
+                });
             });
         });
 

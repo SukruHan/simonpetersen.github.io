@@ -3,25 +3,20 @@ body {
 }
 
 text {
-    font-family: sans-serif;
+    font-family: Helvetica, sans-serif;
 }
 
 article {
     margin: 0 auto;
-    width: 75%;
+    width: 70%;
+}
+
+.label {
+        font-size: 11px;
+        fill: black;
+        text-anchor: middle;
 }
 
 .svgContainer {
     display: inline-block;
-}
-
-.brushed {
-    fill: #ff3399;
-    stroke: #8e1b54;
-    opacity: 1.0;
-}
-
-.non_brushed {
-    fill: #404040;
-    opacity: 0.5;
 }

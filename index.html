@@ -9,8 +9,8 @@
 <body>
 
     <article>
-        <h2>This dataset includes reported murders to the New York City Police Department (NYPD). 
-            Select a period in the timeline to show the geographical distribution in the map.</h2>
+        <h2>This dataset includes reported murders to the New York City Police Department (NYPD) from 2006 to 2016.
+            Select a period in the timeline to show the geographical distribution in the map and the number of murders each hour of the day.</h2>
     </article>
     <div id="timelineContainer"></div>
     <button id="animateButton">Animate!</button>
@@ -106,8 +106,8 @@
                         .attr("cy", function(d) {
                             return projection([d.Longitude, d.Latitude])[1];
                         })
-                        .attr("r", 3)
-                        .attr("fill", "lightgrey");
+                        .attr("r", 2)
+                        .attr("fill", "crimson");
 
                 // Append title to barchart
                 timelineSvg.append("text").attr("x", (timelineW / 2)).attr("y", (padding / 2))
@@ -242,8 +242,8 @@
                         .attr("cy", function(d) {
                             return projection([d.Longitude, d.Latitude])[1];
                         })
-                        .attr("r", 3)
-                        .attr("fill", "lightgrey")
+                        .attr("r", 2)
+                        .attr("fill", "crimson")
                         .append("title")
 			            .text(function(d) { return d.RPT_DT; })
 						.merge(circles);

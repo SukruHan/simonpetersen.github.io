@@ -2,172 +2,82 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Week 7</title>
-    <script type="text/javascript" src="libs/d3/d3.js"></script>
+    <title>Final Project</title>
+    <script type="text/javascript" src="d3/d3.js"></script>
     <link rel="stylesheet" type="text/css" href="site.css">
 </head>
 <body>
-
     <article>
-        <h2>This dataset includes reported murders to the New York City Police Department (NYPD) from 2006 to 2016.
-            Select a period in the timeline to show the geographical distribution in the map and the number of murders each hour of the day.</h2>
+        <h2>Visualizing Traffic Accidents in NYC</h2>
+        <h3>This dataset includes motor vehicle collisions reported to the New York City Police Department (NYPD) 
+            from September 2013 to April 2018. 
+            Select a period in the timeline to show the devlopment in daily collisions.</h3>
     </article>
     <div id="timelineContainer"></div>
-    <button id="animateButton">Animate!</button>
-    <div>
-        <div id="mapContainer" class="svgContainer"></div>
-        <div id="barchartContainer" class="svgContainer"></div>
-    </div>
-    <p>Data from: <a href="https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i">
-        https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Historic/qgea-i56i</a></p>
+    <div id="chartContainer"></div>
+    <p>Data from: <a href="https://data.cityofnewyork.us/Public-Safety/NYPD-Motor-Vehicle-Collisions/h9gi-nx95">
+        https://data.cityofnewyork.us/Public-Safety/NYPD-Motor-Vehicle-Collisions/h9gi-nx95</a></p>
 
     <script type="text/javascript">
-        var h = 400;
-        var w = 500;
-        var timelineH = h/2;
-        var timelineW = w*2;
+        var timelineH = 200;
+        var timelineW = 1000;
+        var h = timelineH*2;
+        var w = 800;
         var padding = 40;
         var paddingR = padding/2;
         var filteredData;
+        var xScaleTL, yScaleTL;
 
         var hoursOfDay = []
         for (var i = 0; i < 24; i++) { hoursOfDay.push(i); }
 
         // Define variables for path generation.
-        var projection = d3.geoMercator().translate([w/2, h/1.65]).scale([32000]).center([-73.955752145,40.648265282]);
+        var projection = d3.geoMercator().translate([w/2, h/1.65]).scale([50000]).center([-73.955752145,40.648265282]);
         var path = d3.geoPath().projection(projection);
 
         var color = d3.scaleQuantize().domain([0,4])
 								.range(["rgb(147,85,209)","rgb(131,105,224)","rgb(90,82,249)",
                                     "rgb(97,150,249","rgb(66,107,244)"]);
 
-        var mapSvg = d3.select("#mapContainer").append("svg").attr("width",w).attr("height",h);
-        var chartSvg = d3.select("#barchartContainer").append("svg").attr("width",w).attr("height",h);
         var timelineSvg = d3.select("#timelineContainer").append("svg").attr("width",timelineW).attr("height",timelineH);
-
-        var key = function(d) { return d.INDEX;}
-        
-        d3.json("data/boroughs.json", function(json) {
-            // Draw paths in map
-            mapSvg.selectAll("path").data(json.features).enter().append("path").attr("d",path)
-                .attr("fill", function(d,i) {
-                    return color(i);
-                });
-
-            // Append label to each borough
-            mapSvg.selectAll("text")
-						.data(json.features)
-						.enter()
-						.append("text")
-						.attr("class", "label")
-						.attr("x", function(d) {
-							 return path.centroid(d)[0];
-						})
-						.attr("y", function(d) {
-							 return path.centroid(d)[1];
-						})
-						.text(function(d) {
-                            return d.properties.BoroName;
-						});
+        var chartSvg = d3.select("#chartContainer").append("svg").attr("width",timelineW).attr("height",h);
             
-            // Append title to map
-            mapSvg.append("text").attr("x", (w / 2)).attr("y", (padding / 2))
-                    .attr("text-anchor", "middle").attr("id","title").text("NYC boroughs");
-            
-            // Read murder-data
-            d3.csv("data/all_murder.csv", function(data) {
-                // Count the number of murders per day
-                var murdersByDate = d3.nest().key(function(d) { return d.RPT_DT; })
-                    .rollup(function(v) { return v.length; }).entries(data);
+        d3.csv("data/NycOverallCount.csv", function(data) {
+            drawTimeline(data);
+            drawChart(data);
+        });
 
-                // Count the number of murders per hour.
-                var murdersByTime = d3.nest().key(function(d) { return d.CMPLNT_FR_TM; })
-                    .rollup(function(v) { return v.length; }).entries(data);
+        // Read traffic-collision-data
+        d3.csv("data/NycCollisions2017.csv", function(data) {
+            // Old code used for brush.
+            /*
+            var brushFilterData = function() {
+                if (d3.event.selection) {
+                    var brushCoordinates = d3.brushSelection(this);
+                    filteredData = data.filter(d => isInRange(brushCoordinates, xScaleTL(new Date(d.RPT_DT))));
+                }
+            }
 
-                var xScaleTL = d3.scaleTime()
-                    .domain([d3.min(murdersByDate, function(d) { return new Date(d.key); }),
-                        d3.max(murdersByDate, function(d) { return new Date(d.key); })])
-                    .range([padding,timelineW - paddingR]);
+            var endBrush = function() {
+                if (d3.event.selection != null) {
+                        //updateBarChart(filteredData);
+                } else {
+                        // Brush is removed. Show all murders in map and barchart.
+                        //updateBarChart(data);
+                }
+            }
 
-                var yScaleTL = d3.scaleLinear().domain([0, d3.max(murdersByDate, function(d) { return d.value; })])
-                    .range([timelineH - padding, padding]);
-                
-                var xScaleBars = d3.scaleBand().domain(hoursOfDay).rangeRound([padding,w-padding]).paddingInner(0.05);
-                var yScaleBars = d3.scaleLinear().domain([0, d3.max(murdersByTime, function(d) { return d.value; })])
-                                    .range([h - padding, padding]);
-                
-                var barWidth = (timelineW - padding) / murdersByDate.length - 0.2;
+            var updateBarChart = function(dataset) {
+                var newDataset = d3.nest().key(function(d) { return d.CMPLNT_FR_TM; })
+                        .rollup(function(v) { return v.length; }).entries(dataset);
 
-                mapSvg.selectAll("circle")
-                        .data(data, key).enter().append("circle")
-                        .attr("cx", function(d) {
-                            return projection([d.Longitude, d.Latitude])[0];
-                        })
-                        .attr("cy", function(d) {
-                            return projection([d.Longitude, d.Latitude])[1];
-                        })
-                        .attr("r", 2)
-                        .attr("fill", "crimson");
+                // Update domain of y-scale.
+                yScaleBars.domain([0, d3.max(newDataset, function(d) { return d.value; })]);
 
-                // Append title to barchart
-                timelineSvg.append("text").attr("x", (timelineW / 2)).attr("y", (padding / 2))
-                    .attr("text-anchor", "middle").attr("id","title").text("Murders in NYC");
+                // Select bars in barchart.
+                var bars = chartSvg.selectAll("rect").data(newDataset, function(d) { return d.key; });
 
-                timelineSvg.selectAll("rect").data(murdersByDate)
-                        .enter()
-                        .append("rect")
-                        .attr("x", function(d) {
-                            return xScaleTL(new Date(d.key)) + 0.1;
-                        })
-                        .attr("y", function(d) {
-                            return yScaleTL(d.value);
-                        })
-                        .attr("height", function(d) {
-                            return timelineH - yScaleTL(d.value) - padding;
-                        })
-                        .attr("width", barWidth)
-                        .attr("fill", "steelblue");
-            
-                var xAxisTL = d3.axisBottom(xScaleTL);
-                timelineSvg.append("g")
-                    .attr("class", "x axis")
-                    .attr("transform", "translate(0," + (timelineH - padding) + ")")
-                    .call(xAxisTL);
-            
-                var yAxisTL = d3.axisLeft(yScaleTL);
-                timelineSvg.append("g")
-                    .attr("class", "y axis")
-                    .attr("transform", "translate(" + padding + ",0)")
-                    .call(yAxisTL);
-                
-                // Append x-axis label
-                timelineSvg.append("text")
-                    .attr("class", "x label")
-                    .attr("text-anchor", "middle")
-                    .attr("y", timelineH - 20)
-                    .attr("x", timelineW/2)
-                    .attr("dy", "1em")
-                    .attr("font-size", "12px")
-                    .text("Day");
-                
-                // Append y-axis label
-                timelineSvg.append("text")
-                    .attr("class", "y label")
-                    .attr("text-anchor", "middle")
-                    .attr("y", -1)
-                    .attr("x", -timelineH/2)
-                    .attr("dy", "1em")
-                    .attr("font-size", "12px")
-                    .attr("transform", "rotate(-90)")
-                    .text("# of Murders Committed");
-                
-                // Append title to barchart
-                chartSvg.append("text").attr("x", (w / 2)).attr("y", (padding / 2))
-                    .attr("text-anchor", "middle").attr("id","title").text("Murders in NYC by time of day");
-
-                chartSvg.selectAll("rect").data(murdersByTime, function(d) { return d.key; })
-                        .enter()
-                        .append("rect")
+                bars.transition().duration(500)
                         .attr("x", function(d) {
                             if (d.key == 0) { return xScaleBars(0); }
                             return xScaleBars(d.key);
@@ -175,130 +85,22 @@
                         .attr("y", function(d) {
                             return yScaleBars(d.value);
                         })
+                        .attr("width", xScaleBars.bandwidth())
                         .attr("height", function(d) {
                             return h - yScaleBars(d.value) - padding;
                         })
-                        .attr("width", xScaleBars.bandwidth())
                         .attr("fill", "steelblue");
             
-                var xAxisBars = d3.axisBottom(xScaleBars).tickValues(hoursOfDay);
-                chartSvg.append("g")
-                    .attr("class", "x axis")
-                    .attr("transform", "translate(0," + (h - padding) + ")")
-                    .call(xAxisBars);
+                yAxisBars = d3.axisLeft(yScaleBars);
+                chartSvg.select(".y.axis").transition().duration(500).call(yAxisBars);
+            }
+
+            var brush = d3.brushX().extent([[padding,padding],[timelineW-paddingR,timelineH-padding]])
+                        .on("brush", brushFilterData).on("end",endBrush);
             
-                var yAxisBars = d3.axisLeft(yScaleBars);
-                chartSvg.append("g")
-                    .attr("class", "y axis")
-                    .attr("transform", "translate(" + padding + ",0)")
-                    .call(yAxisBars);
-                
-                // Append x-axis label
-                chartSvg.append("text")
-                    .attr("class", "x label")
-                    .attr("text-anchor", "middle")
-                    .attr("y", h - 20)
-                    .attr("x", w/2)
-                    .attr("dy", "1em")
-                    .attr("font-size", "12px")
-                    .text("Hours");
-
-                chartSvg.append("text")
-                    .attr("class", "y label")
-                    .attr("text-anchor", "middle")
-                    .attr("y", -1)
-                    .attr("x", -h/2)
-                    .attr("dy", "1em")
-                    .attr("font-size", "12px")
-                    .attr("transform", "rotate(-90)")
-                    .text("# of Murders Committed");
-
-                var brushFilterData = function() {
-                    if (d3.event.selection) {
-                        var brushCoordinates = d3.brushSelection(this);
-                        filteredData = data.filter(d => isInRange(brushCoordinates, xScaleTL(new Date(d.RPT_DT))));
-                        updateMap(filteredData);
-                    }
-                }
-
-                var endBrush = function() {
-                    if (d3.event.selection != null) {
-                        updateBarChart(filteredData);
-                    } else {
-                        // Brush is removed. Show all murders in map and barchart.
-                        updateMap(data);
-                        updateBarChart(data);
-                    }
-                }
-
-                var updateMap = function(dataset) {
-                    var circles = mapSvg.selectAll("circle").data(dataset,key);
-
-                    circles.enter()
-						.append("circle")
-                        .attr("cx", function(d) {
-                            return projection([d.Longitude, d.Latitude])[0];
-                        })
-                        .attr("cy", function(d) {
-                            return projection([d.Longitude, d.Latitude])[1];
-                        })
-                        .attr("r", 2)
-                        .attr("fill", "crimson")
-                        .append("title")
-			            .text(function(d) { return d.RPT_DT; })
-						.merge(circles);
-                    
-					circles.exit().remove();
-                }
-
-                var updateBarChart = function(dataset) {
-                    var newDataset = d3.nest().key(function(d) { return d.CMPLNT_FR_TM; })
-                        .rollup(function(v) { return v.length; }).entries(dataset);
-
-                    // Update domain of y-scale.
-                    yScaleBars.domain([0, d3.max(newDataset, function(d) { return d.value; })]);
-
-                    // Select bars in barchart
-                    var bars = chartSvg.selectAll("rect").data(newDataset, function(d) { return d.key; });
-
-                    bars.transition().duration(500)
-                            .attr("x", function(d) {
-                                if (d.key == 0) { return xScaleBars(0); }
-                                return xScaleBars(d.key);
-                            })
-                            .attr("y", function(d) {
-                                return yScaleBars(d.value);
-                            })
-                            .attr("width", xScaleBars.bandwidth())
-                            .attr("height", function(d) {
-                                return h - yScaleBars(d.value) - padding;
-                            })
-                            .attr("fill", "steelblue");
-            
-                    yAxisBars = d3.axisLeft(yScaleBars);
-                    chartSvg.select(".y.axis").transition().duration(500).call(yAxisBars);
-                }
-
-                var brush = d3.brushX().extent([[padding,padding],[timelineW-paddingR,timelineH-padding]])
-                    .on("brush", brushFilterData).on("end",endBrush);
-                timelineSvg.append("g").attr("id","brush").call(brush);
-
-                d3.select("#animateButton").on("click", function() {
-                    var graphWidth = timelineW - padding - paddingR;
-                    var width = graphWidth / 11;
-                    var x = [padding, padding + width];
-                    timelineSvg.select("#brush").call(brush.move,x);
-                    // Run move-function every second.
-                    var intervalId = setInterval(function() {
-                        if (x[1] < graphWidth) {
-                            x = [x[0] + width, x[1] + width];
-                            timelineSvg.select("#brush").transition().duration(600).call(brush.move,x);
-                        } else {
-                            clearInterval(intervalId);
-                        }
-                    }, 1200);
-                });
-            });
+            // Add brush to svg.
+            timelineSvg.append("g").attr("id","brush").call(brush);
+            */
         });
 
         var isInRange = function(brushCoordinates, x) {
@@ -306,6 +108,129 @@
             var x1 = brushCoordinates[1];
 
             return x0 <= x && x <= x1;
+        }
+
+        var drawTimeline = function(data) {
+            var barWidth = (timelineW - padding) / data.length - 0.2;
+
+            xScaleTL = d3.scaleTime()
+                    .domain([d3.min(data, function(d) { return new Date(d.date); }),
+                        d3.max(data, function(d) { return new Date(d.date); })])
+                    .range([padding,timelineW - paddingR]);
+            
+            yScaleTL = d3.scaleLinear().domain([0, d3.max(data, function(d) { return parseInt(d.total); })])
+                    .range([timelineH - padding, padding]);
+
+            timelineSvg.selectAll("rect").data(data)
+                        .enter()
+                        .append("rect")
+                        .attr("x", function(d) {
+                            return xScaleTL(new Date(d.date)) + 0.1;
+                        })
+                        .attr("y", function(d) {
+                            return yScaleTL(d.total);
+                        })
+                        .attr("height", function(d) {
+                            return timelineH - yScaleTL(d.total) - padding;
+                        })
+                        .attr("width", barWidth)
+                        .attr("fill", "darkgreen");
+            
+            var xAxisTL = d3.axisBottom(xScaleTL);
+            timelineSvg.append("g")
+                    .attr("class", "x axis")
+                    .attr("transform", "translate(0," + (timelineH - padding) + ")")
+                    .call(xAxisTL);
+            
+            var yAxisTL = d3.axisLeft(yScaleTL).ticks(5);
+            timelineSvg.append("g")
+                    .attr("class", "y axis")
+                    .attr("transform", "translate(" + padding + ",0)")
+                    .call(yAxisTL);
+            
+            // Append title to barchart
+            timelineSvg.append("text").attr("x", (timelineW / 2)).attr("y", (padding / 2))
+                    .attr("text-anchor", "middle").attr("id","title").text("Vehicle collisions in NYC");
+                
+            // Append x-axis label
+            timelineSvg.append("text")
+                .attr("class", "x label")
+                .attr("text-anchor", "middle")
+                .attr("y", timelineH - 20)
+                .attr("x", timelineW/2)
+                .attr("dy", "1em")
+                .attr("font-size", "12px")
+                .text("Day");
+                
+            // Append y-axis label
+            timelineSvg.append("text")
+                .attr("class", "y label")
+                .attr("text-anchor", "middle")
+                .attr("y", -1)
+                .attr("x", -timelineH/2)
+                .attr("dy", "1em")
+                .attr("font-size", "12px")
+                .attr("transform", "rotate(-90)")
+                .text("# of Vehicle Collisions");
+        }
+
+        var drawChart = function(data) {
+            var xScaleChart = d3.scaleTime()
+                    .domain([d3.min(data, function(d) { return new Date(d.date); }),
+                        d3.max(data, function(d) { return new Date(d.date); })])
+                    .range([padding,timelineW - paddingR]);
+            
+            var yScaleChart = d3.scaleLinear().domain([0, d3.max(data, function(d) { return parseInt(d.simple); })])
+                    .range([h - padding, padding]);
+
+            // Define line showing number of collisions per day with fatalities.
+            var fatalLine = d3.line().x(function(d) { return xScaleChart(new Date(d.date)); })
+                .y(function(d) { return yScaleChart(d.fatal); });
+
+            // Define line showing number of collisions per day with injuries.
+            var seriousLine = d3.line().x(function(d) { return xScaleChart(new Date(d.date)); })
+                .y(function(d) { return yScaleChart(d.serious); });
+            
+            // Define line showing collisions without injuries and fatalities.
+            var simpleLine = d3.line().x(function(d) { return xScaleChart(new Date(d.date)); })
+                .y(function(d) { return yScaleChart(d.simple); });
+
+            chartSvg.append("path").datum(data).attr("stroke", "red").attr("fill","none").attr("d", fatalLine);
+            chartSvg.append("path").datum(data).attr("stroke", "yellow").attr("fill","none").attr("d", seriousLine);
+            chartSvg.append("path").datum(data).attr("stroke", "steelblue").attr("fill","none").attr("d", simpleLine);
+
+            // Append x-axis label
+            chartSvg.append("text")
+                .attr("class", "x label")
+                .attr("text-anchor", "middle")
+                .attr("y", h - 20)
+                .attr("x", timelineW/2)
+                .attr("dy", "1em")
+                .attr("font-size", "12px")
+                .text("Day");
+                
+            // Append y-axis label
+            chartSvg.append("text")
+                .attr("class", "y label")
+                .attr("text-anchor", "middle")
+                .attr("y", -1)
+                .attr("x", -h/2)
+                .attr("dy", "1em")
+                .attr("font-size", "12px")
+                .attr("transform", "rotate(-90)")
+                .text("# of Vehicle Collisions");
+
+            var xAxis = d3.axisBottom(xScaleChart);
+            chartSvg.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + (h - padding) + ")")
+                .call(xAxis);
+            
+            var yAxis = d3.axisLeft(yScaleChart);
+            chartSvg.append("g")
+                .attr("class", "y axis")
+                .attr("transform", "translate(" + padding + ",0)")
+                .call(yAxis);
         }
     </script>
 </body>

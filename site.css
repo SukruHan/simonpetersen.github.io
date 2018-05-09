@@ -2,21 +2,19 @@ body {
     text-align: center;
 }
 
-text {
-    font-family: Helvetica, sans-serif;
-}
-
 article {
     margin: 0 auto;
+    text-align: left;
     width: 70%;
 }
 
-.label {
-        font-size: 11px;
-        fill: black;
-        text-anchor: middle;
+svg {
+    display: block;
+    margin: auto;
 }
 
-.svgContainer {
-    display: inline-block;
+.label {
+    font-size: 11px;
+    fill: black;
+    text-anchor: middle;
 }

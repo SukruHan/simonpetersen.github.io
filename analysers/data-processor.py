@@ -2,13 +2,14 @@ import csv
 import numpy
 
 oldFile = open('../data/NYPD_Motor_Vehicle_Collisions.csv')
-newFile = open('../data/NycVehicleCollisions_all.csv', 'w')
+#newFile = open('../data/NycVehicleCollisions_all.csv', 'w')
+newFile = open('../data/NycVehicleCollisions2017.csv', 'w')
 readerOldFile = csv.reader(oldFile)
 
-newFile.write('date,hour,borough,seriousDegree,taxi,pedestrianCyclist,vehicles,uniqueKey')
+newFile.write('date,hour,borough,seriousDegree,taxi,pedestrianCyclist,vehicles,uniqueKey,lat,lon')
 
 def getNumberOfVehicles(vehicleString):
-    if vehicleString != '':
+    if vehicleString == '':
         return 0
     return vehicleString.count('+') + 1
 
@@ -33,23 +34,22 @@ def getSeriousDegree(injured,killed):
 
 # Combining five rows. Used for vehicle types and contributing factors
 def concatFiveValues(row, i):
-    if row[i] == 'Unspecified':
-        return ''
-    j = i + 1
-    values = row[i]
+    j = i
+    values = ''
     while j < i + 5:
-        if row[j] == '' or row[j] == 'Unspecified':
+        if row[j] == '':
             return values
         else:
             values += '+' + row[j]
             j = j + 1
+    return values
 
 # Read values of csv-file.
 for row in readerOldFile:
         date = row[0]
         year = date[-4:]
-        #if year == '2017':
-        if date != 'DATE':
+        if year == '2017':
+        #if date != 'DATE':
             lat = row[4]
             lon = row[5]
             time = row[1]
@@ -61,9 +61,11 @@ for row in readerOldFile:
             pedestrianCyclistInvolved = int(row[12]) > 0 or int(row[13]) > 0 or int(row[14]) > 0 or int(row[15]) > 0
             borough = row[2]
             vehicles = getNumberOfVehicles(vehicleTypes)
+            lat = row[4]
+            lon = row[5]
             # Add values to row. Column 23 is UniqueKey
             newRow = date + ',' + hour + ',' + borough + ',' + str(degree) + ',' + str(taxi) + ','
-            newRow += str(pedestrianCyclistInvolved) + ',' + str(vehicles) + ',' + row[23]
+            newRow += str(pedestrianCyclistInvolved) + ',' + str(vehicles) + ',' + row[23] + ',' + lat + ',' + lon
             newFile.write('\n')
             newFile.write(newRow)
 

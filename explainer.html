@@ -1,0 +1,71 @@
+<!DOCTPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Final Project: Explainer</title>
+    <link rel="stylesheet" type="text/css" href="site.css">
+    <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro' rel='stylesheet' type='text/css'>
+</head>
+<body>
+    <article>
+        <h1>Visualizing Traffic Accidents in NYC: Explainer</h2>
+        <h2>Motivation</h2>
+            <p>
+                Our dataset consists of observations of vehicle collisions, from September 2013 to April 2018. With this 
+                dataset, we wanted to show the user which types of accidents occured more often, and which areas of NYC 
+                has the highest number of collisions.
+            </p>
+            <p>Link to original dataset: <a href="https://data.cityofnewyork.us/Public-Safety/NYPD-Motor-Vehicle-Collisions/h9gi-nx95">
+                https://data.cityofnewyork.us/</a></p>
+        <h2>Basic stats</h2>
+            <p>
+                The dataset contains 1.26 million rows and 29 columns. The columns contains different types of 
+                information, such as location of the collission, the number of vehicles involved, and the type of the 
+                vehicles, number of injuries, fatalities and contributing factors.
+            </p>
+            <p>
+                In our analysis of the dataset, we have focused on the types of vehicles, along with the number of 
+                injuries and fatalities. We have created two datasets, one simply containing the number of accidents
+                for each day in the dataset, and another with each observation of a collision in 2017, where we have 
+                extracted the information of interest, i.e. if a pedestrian or cyclist were involved, if a taxi was 
+                involved, and how many vehicles were involved in the collision.
+            </p>
+        <h2>Genre</h2>
+            <p>
+                Our data visualizations are of the type annotated chart. They are reader driven, as the reader can 
+                filter and explore the data, as the user wishes.
+            </p>
+            <p>
+                We have used the following types of Visual Narrative:
+                <ul>
+                    <li>Visual Structuring: Progress Bar / Timebar</li>
+                    <li>Highlighting: Zooming</li>
+                    <li>Transistion Guidance: Animated Transitions</li>
+                </ul>
+            </p>
+            <p>
+                We have used the following types of Narrative Structure:
+                <ul>
+                    <li>Ordering: Linear</li>
+                    <li>Interactivity: Filtering / Selection / Search, Hover Highlighting / Details</li>
+                    <li>Messaging: Captions / Headlines, Introductory Text</li>
+                </ul>
+            </p>
+        <h2>Visualizations</h2>
+            <p>
+                Our visualizations are split in two parts. The first part show a timeline depicting the number of 
+                collisions in each day of the period. The development in the number of daily accidents is then showed 
+                in another chart with a lineplot. The viewer can then choose a period on the timeline, and then the 
+                lineplot will update, to show the development in the chosen period.
+            </p>
+            <p>
+                In the second part, we wish to show which types of accidents occured most often in 2017. The user can 
+                choose whether to see the number of accidents per time of day, or by borough in New York City. The user 
+                can also filter to only show the number of accidents where taxis were involved, or where pedestrians or 
+                cyclists were involved.
+            </p>
+        <h2>Discussion</h2>
+        <h2>Contributions</h2>
+    </article>
+</body>
+</html>

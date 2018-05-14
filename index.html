@@ -11,16 +11,19 @@
 <body>
     <article>
         <h2>Visualizing Traffic Accidents in NYC</h2>
+        <p><a href="explainer.html">Explainer</a></p>
         <h3>This dataset includes motor vehicle collisions reported to the New York City Police Department (NYPD) 
             from September 2013 to April 2018. 
             Select a period in the timeline to show the devlopment in daily collisions.</h3>
     </article>
     <div id="timelineContainer"></div>
     <div id="chartContainer"></div>
+    <article>
     <h2>Traffic Accidents in NYC in 2017</h2>
         <h3>This vizualisation provides an overview of accidents in 2017. 
             It possible to filter the data by selecting different radiobuttons and thereby exploring the data and its patterns. </h3>
-    <div>
+    </article>
+            <div>
         <span>
             <input type="radio" name="yearlyradio" value="hourly" onclick='change(this.value)' checked>Collisions per hour
             <input type="radio" name="yearlyradio" value="type" onclick='change(this.value)'>Types of collisions
@@ -53,6 +56,8 @@
         var paddingR = padding/2;
         var filteredData;
         var xScaleTL, yScaleTL;
+        var timelineData;
+        var simplePath, seriousPath, fatalPath;
 
         var hoursOfDay = []
         for (var i = 0; i < 24; i++) { hoursOfDay.push(i); }
@@ -70,6 +75,7 @@
         var barSvg = d3.select("#yearlyOverview").append("svg").attr("width", timelineW).attr("height", h);
             
         d3.csv("data/NycOverallCount.csv", function(data) {
+            timelineData = data;
             drawTimeline(data);
             drawChart(data);
         });
@@ -119,7 +125,7 @@
                     .attr("transform", "translate(0," + (timelineH - padding) + ")")
                     .call(xAxisTL);
             
-            var yAxisTL = d3.axisLeft(yScaleTL).ticks(5);
+            var yAxisTL = d3.axisLeft(yScaleTL).ticks(4);
             timelineSvg.append("g")
                     .attr("class", "y axis")
                     .attr("transform", "translate(" + padding + ",0)")
@@ -133,7 +139,7 @@
             timelineSvg.append("text")
                 .attr("class", "x label")
                 .attr("text-anchor", "middle")
-                .attr("y", timelineH - 20)
+                .attr("y", timelineH - 15)
                 .attr("x", timelineW/2)
                 .attr("dy", "1em")
                 .attr("font-size", "12px")
@@ -149,38 +155,69 @@
                 .attr("font-size", "12px")
                 .attr("transform", "rotate(-90)")
                 .text("# of Vehicle Collisions");
+            
+            var brush = d3.brushX().extent([[padding,padding],[timelineW-paddingR,timelineH-padding]])
+                .on("end",endBrush);
+            
+            // Add brush to svg.
+            timelineSvg.append("g").attr("id","brush").call(brush);
         }
 
         var drawChart = function(data) {
-            var xScaleChart = d3.scaleTime()
+            var x = d3.scaleTime()
                     .domain([d3.min(data, function(d) { return new Date(d.date); }),
                         d3.max(data, function(d) { return new Date(d.date); })])
                     .range([padding,timelineW - paddingR]);
             
-            var yScaleChart = d3.scaleLinear().domain([0, d3.max(data, function(d) { return parseInt(d.simple); })])
-                    .range([h - padding, padding]);
+            var y = d3.scaleLinear().domain([0, d3.max(data, function(d) { return parseInt(d.simple); })])
+                    .range([h - padding, 0]);
 
             // Define line showing number of collisions per day with fatalities.
-            var fatalLine = d3.line().x(function(d) { return xScaleChart(new Date(d.date)); })
-                .y(function(d) { return yScaleChart(d.fatal); });
+            var fatalLine = d3.line().x(function(d) { return x(new Date(d.date)); })
+                .y(function(d) { return y(d.fatal); });
 
             // Define line showing number of collisions per day with injuries.
-            var seriousLine = d3.line().x(function(d) { return xScaleChart(new Date(d.date)); })
-                .y(function(d) { return yScaleChart(d.serious); });
+            var seriousLine = d3.line().x(function(d) { return x(new Date(d.date)); })
+                .y(function(d) { return y(d.serious); });
             
             // Define line showing collisions without injuries and fatalities.
-            var simpleLine = d3.line().x(function(d) { return xScaleChart(new Date(d.date)); })
-                .y(function(d) { return yScaleChart(d.simple); });
+            var simpleLine = d3.line().x(function(d) { return x(new Date(d.date)); })
+                .y(function(d) { return y(d.simple); });
 
-            chartSvg.append("path").datum(data).attr("stroke", "red").attr("fill","none").attr("d", fatalLine);
-            chartSvg.append("path").datum(data).attr("stroke", "yellow").attr("fill","none").attr("d", seriousLine);
-            chartSvg.append("path").datum(data).attr("stroke", "steelblue").attr("fill","none").attr("d", simpleLine);
+            fatalPath = chartSvg.append("path").datum(data).attr("stroke", "red").attr("fill","none").attr("d", fatalLine);
+            seriousPath = chartSvg.append("path").datum(data).attr("stroke", "yellow").attr("fill","none").attr("d", seriousLine);
+            simplePath = chartSvg.append("path").datum(data).attr("stroke", "steelblue").attr("fill","none").attr("d", simpleLine);
+
+            var legendColors = d3.scaleOrdinal().range(["steelblue", "yellow", "red"]);
+
+            chartSvg.append('g')
+                .attr("class", "legend")
+                .attr('font-size', 11)
+                .attr('text-anchor', 'start');
+ 
+            var legend = chartSvg.selectAll('.legend').selectAll('g')
+                .data(["Accidents without injuries", "Accidents with injuries", "Accidents with fatalities"])
+                .enter().append('g')
+                .attr('transform', function(d, i) { return 'translate(0,' + i * 14 + ')'; });
+ 
+            legend.append('rect')
+                .attr('x', 60)
+                .attr('y', 6)
+                .attr('width', 15)
+                .attr('height', 2)
+                .attr('fill', legendColors);
+ 
+            legend.append('text')
+                .attr('x', 80)
+                .attr('y', 6)
+                .attr('dy', '0.32em')
+                .text(d => d);
 
             // Append x-axis label
             chartSvg.append("text")
                 .attr("class", "x label")
                 .attr("text-anchor", "middle")
-                .attr("y", h - 20)
+                .attr("y", h - 15)
                 .attr("x", timelineW/2)
                 .attr("dy", "1em")
                 .attr("font-size", "12px")
@@ -197,18 +234,72 @@
                 .attr("transform", "rotate(-90)")
                 .text("# of Vehicle Collisions");
 
-            var xAxis = d3.axisBottom(xScaleChart);
+            var xAxis = d3.axisBottom(x);
             chartSvg.append("g")
                 .attr("class", "x axis")
                 .attr("transform", "translate(0," + (h - padding) + ")")
                 .call(xAxis);
             
-            var yAxis = d3.axisLeft(yScaleChart);
+            var yAxis = d3.axisLeft(y);
             chartSvg.append("g")
                 .attr("class", "y axis")
                 .attr("transform", "translate(" + padding + ",0)")
                 .call(yAxis);
         }
+
+        var endBrush = function() {
+             if (d3.event.selection != null) {
+                 // Brushing has ended. Update graph!
+                 var brushCoordinates = d3.brushSelection(this);
+                 var filteredData = timelineData.filter(d => isInSelection(brushCoordinates, new Date(d.date)));
+                 updateGraph(filteredData);
+             } else {
+                 // Brush is removed. Show full history of collisions.
+                 updateGraph(timelineData);
+             }
+         }
+ 
+         var isInSelection = function(brushCoordinates, x) {
+             var x0 = brushCoordinates[0];
+             var x1 = brushCoordinates[1];
+ 
+             return x0 <= xScaleTL(x) && xScaleTL(x) <= x1;
+         }
+ 
+        var updateGraph = function(data) {
+            var x = d3.scaleTime()
+                    .domain([d3.min(data, function(d) { return new Date(d.date); }),
+                         d3.max(data, function(d) { return new Date(d.date); })])
+                    .range([padding,timelineW - paddingR]);
+            
+            var y = d3.scaleLinear().domain([0, d3.max(data, function(d) { return parseInt(d.simple); })])
+                    .range([h - padding, 0]);
+            
+            // New line objects, with an updated scale.
+            var fatalLine = d3.line().x(function(d) { return x(new Date(d.date)); })
+                .y(function(d) { return y(d.fatal); });
+            var seriousLine = d3.line().x(function(d) { return x(new Date(d.date)); })
+                .y(function(d) { return y(d.serious); });
+            var simpleLine = d3.line().x(function(d) { return x(new Date(d.date)); })
+                .y(function(d) { return y(d.simple); });
+
+            // Update paths with new dataset.
+            simplePath.datum(data);
+            simplePath.transition().duration(400).attr('d', simpleLine);
+
+            seriousPath.datum(data);
+            seriousPath.transition().duration(400).attr('d', seriousLine);
+
+            fatalPath.datum(data);
+            fatalPath.transition().duration(400).attr('d', fatalLine);
+ 
+             // Update axes.
+            var xAxis = d3.axisBottom(x);            
+            chartSvg.select(".x.axis").transition().duration(400).call(xAxis);
+ 
+            var yAxis = d3.axisLeft(y);
+            chartSvg.select(".y.axis").transition().duration(400).call(yAxis);
+         }
 
         //Third Chart
         //variables for yearlyOverview chart

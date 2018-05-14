@@ -1,5 +1,6 @@
 body {
     text-align: center;
+    font-family: 'Source Sans Pro';
 }
 
 article {
@@ -17,4 +18,34 @@ svg {
     font-size: 11px;
     fill: black;
     text-anchor: middle;
+}
+
+rect:hover {
+    fill-opacity: 0.5;
+}
+
+#tooltip {
+    position: absolute;
+    width: 350px;
+    height: auto;
+    padding: 10px;
+    background-color: whitesmoke;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    border-radius: 10px;
+    -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+    -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+    box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+}
+
+#tooltip.hidden {
+    display: none;
+}
+
+#tooltip p {
+    margin: 0;
+    font-family: 'Source Sans Pro';
+    font-size: 16px;
+    line-height: 20px;
 }

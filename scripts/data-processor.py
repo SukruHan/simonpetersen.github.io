@@ -34,8 +34,8 @@ def getSeriousDegree(injured,killed):
 
 # Combining five rows. Used for vehicle types and contributing factors
 def concatFiveValues(row, i):
-    j = i
-    values = ''
+    j = i + 1
+    values = row[i]
     while j < i + 5:
         if row[j] == '':
             return values

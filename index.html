@@ -34,9 +34,9 @@
         <div id="yearlyOverview">
         </div>
         <div id="tooltip" class="hidden">
-            <p><strong>Amount Accidents without Injuries: </strong><span id='non-value'>0</span></p>
-            <p><strong>Amount Accidents with Injuries: </strong><span id='serious-value'>0</span></p>
-            <p><strong>Amount Accidents with Fatalities: </strong><span id='fatal-value'>0</span></p>
+            <p><strong>Accidents without injuries: </strong><span id='non-value'>0</span></p>
+            <p><strong>Accidents with injuries: </strong><span id='serious-value'>0</span></p>
+            <p><strong>Accidents with fatalities: </strong><span id='fatal-value'>0</span></p>
         </div>
         <div id="taxiRadios">
             <input type="radio" name="taxi" value="all" onclick='change(this.value)' checked> All
@@ -44,31 +44,26 @@
             <input type="radio" name="taxi" value="bike" onclick='change(this.value)'> Cyclists/Pedestrians
         </div>
     </span>
-    <p>Data from: <a href="https://data.cityofnewyork.us/Public-Safety/NYPD-Motor-Vehicle-Collisions/h9gi-nx95">
-        https://data.cityofnewyork.us/Public-Safety/NYPD-Motor-Vehicle-Collisions/h9gi-nx95</a></p>
 
     <script type="text/javascript">
-        var timelineH = 200;
+        var timelineH = 180;
         var timelineW = 1000;
         var h = timelineH*2;
         var w = 800;
-        var padding = 40;
+        var padding = 50;
         var paddingR = padding/2;
-        var filteredData;
+        
+        // Scale for timeline viz
         var xScaleTL, yScaleTL;
         var timelineData;
         var simplePath, seriousPath, fatalPath;
-
-        var hoursOfDay = []
-        for (var i = 0; i < 24; i++) { hoursOfDay.push(i); }
-
-        // Define variables for path generation.
-        var projection = d3.geoMercator().translate([w/2, h/1.65]).scale([50000]).center([-73.955752145,40.648265282]);
-        var path = d3.geoPath().projection(projection);
-
-        var color = d3.scaleQuantize().domain([0,4])
-								.range(["rgb(147,85,209)","rgb(131,105,224)","rgb(90,82,249)",
-                                    "rgb(97,150,249","rgb(66,107,244)"]);
+        
+        // Third Chart
+        // variables for yearlyOverview chart
+        var degreeSeries, DegreesByHourType, taxiType, bikeType, neighborhoodType, typeOfAccidentType;
+        var sumValues;
+        var xScaleYear, yScaleYear, xAxisYear, yAxisYear;
+        var stack, groups, colors;
 
         var timelineSvg = d3.select("#timelineContainer").append("svg").attr("width",timelineW).attr("height",timelineH);
         var chartSvg = d3.select("#chartContainer").append("svg").attr("width",timelineW).attr("height",h);
@@ -83,8 +78,6 @@
         d3.csv("data/NycVehicleCollisions2017_geo.csv", function(data){
             drawBarChart2017(data);
         });
-
-        var key = function(d) { return d.INDEX;}
 
         var isInRange = function(brushCoordinates, x) {
             var x0 = brushCoordinates[0];
@@ -102,7 +95,7 @@
                     .range([padding,timelineW - paddingR]);
             
             yScaleTL = d3.scaleLinear().domain([0, d3.max(data, function(d) { return parseInt(d.total); })])
-                    .range([timelineH - padding, padding]);
+                    .range([timelineH - padding, paddingR]);
 
             timelineSvg.selectAll("rect").data(data)
                         .enter()
@@ -300,13 +293,6 @@
             var yAxis = d3.axisLeft(y);
             chartSvg.select(".y.axis").transition().duration(400).call(yAxis);
          }
-
-        //Third Chart
-        //variables for yearlyOverview chart
-        var degreeSeries, DegreesByHourType, taxiType, bikeType, neighborhoodType, typeOfAccidentType;
-        var sumValues;
-        var xScaleYear, yScaleYear, xAxisYear, yAxisYear;
-        var stack, groups, colors;
         
         //Initial chart setup
         var drawBarChart2017 = function(data) {
@@ -336,8 +322,7 @@
                 .rollup(function(v) { return v.length; }).entries(data);
 
             //Make dataset stackable
-            stack = d3.stack()
-                            .keys(["One", "Two", "Three"]);
+            stack = d3.stack().keys(["One", "Two", "Three"]);
 
             DegreesByHourType = transformDictionary(crashDegreesByHour);
             degreeSeries = stack(DegreesByHourType);
@@ -349,14 +334,14 @@
 
             //coloring [blue, yellow, red]
             colors = ["rgb(20, 74, 122)", "rgb(244, 185, 66)", "rgb(135, 50, 40)"];
-            var z = d3.scaleOrdinal().range(colors);
+            var colorScale = d3.scaleOrdinal().range(colors);
 
             //Adding a group for each row
             groups = barSvg.selectAll("g")
 				.data(degreeSeries)
 				.enter()
 				.append("g")
-				.style("fill", z);
+				.style("fill", colorScale);
 
             updateTime(DegreesByHourType);
 
@@ -398,22 +383,23 @@
                 .attr("transform", "rotate(-90)")
                 .text("# of Vehicle Collisions");
 
-            var legend = groups.append('g')
+            groups.append('g')
+                .attr("class", "legend")
                 .attr('font-size', 10)
                 .attr('text-anchor', 'end');
 
-            var legendEnter = legend.selectAll('g')
-                .data(["Accidents without Injuries", "Accidents with Injuries", "Accidents with Fatalities"])
+            var legend = groups.select(".legend").selectAll('g')
+                .data(["Accidents without injuries", "Accidents with injuries", "Accidents with fatalities"])
                 .enter().append('g')
                 .attr('transform', function(d, i) { return 'translate(0,' + i * 20 + ')'; });
 
-            legendEnter.append('circle')
+            legend.append('circle')
                 .attr('cx', timelineW - 19)
                 .attr('cy', 9)
                 .attr('r', 5)
-                .attr('fill', z);
+                .attr('fill', colorScale);
 
-            legendEnter.append('text')
+            legend.append('text')
                 .attr('x', timelineW - 26)
                 .attr('y', 9.5)
                 .attr('fill', 'black')

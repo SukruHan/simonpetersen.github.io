@@ -2,696 +2,480 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Final Project</title>
+    <title>Social Graphs</title>
     <script type="text/javascript" src="d3/d3.js"></script>
-    <link rel="stylesheet" type="text/css" href="site.css">
+    <link rel="stylesheet" type="text/css" href="site2.css">
     <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro' rel='stylesheet' type='text/css'>
 
 </head>
 <body>
     <article>
-        <h2>Visualizing Traffic Accidents in NYC</h2>
-        <p><a href="explainer.html">Explainer</a></p>
-        <p><a href="https://github.com/simonpetersen/simonpetersen.github.io">GitHub Repo</a></p>
-        <h3>This dataset includes motor vehicle collisions reported to the New York City Police Department (NYPD) 
-            from September 2013 to April 2018. 
-            Select a period in the timeline to show the devlopment in daily collisions.</h3>
-    </article>
-    <div id="timelineContainer"></div>
-    <br />
-    <div id="chartContainer"></div>
-    <article>
-    <h2>Traffic Accidents in NYC in 2017</h2>
-        <h3>This visualization provides an overview of accidents in 2017. It possible to filter the data by selecting 
-            different radiobuttons and thereby exploring the data and its patterns. </h3>
-    </article>
-            <div>
-        <span>
-            <input type="radio" name="yearlyradio" value="hourly" onclick='change(this.value)' checked>Collisions per hour
-            <input type="radio" name="yearlyradio" value="type" onclick='change(this.value)'>Types of collisions
-            <input type="radio" name="yearlyradio" value="borough" onclick='change(this.value)'>Boroughs
-        </span>
-    </div>
-    <span>
-        <div id="yearlyOverview">
+        <div class="topnav">
+          <ul>
+          <li><a class="active" href="#idea">Main Idea</a></li>
+          <li><a href="#interest">Interest</a></li>
+          <li><a href="#data">Datasets</a></li>
+          <li><a href="#plan">Plan</a></li>
+          <li><a href="#network">Network Analysis</a></li>
+          <li><a href="#text">Text Analysis</a></li>
+          <li><a href="#more">More Info</a></li>
+        </ul>
         </div>
-        <div id="tooltip" class="hidden">
-            <p><strong>Accidents without injuries: </strong><span id='non-value'>0</span></p>
-            <p><strong>Accidents with injuries: </strong><span id='serious-value'>0</span></p>
-            <p><strong>Accidents with fatalities: </strong><span id='fatal-value'>0</span></p>
-        </div>
-        <div id="taxiRadios">
-            <input type="radio" name="taxi" value="all" onclick='change(this.value)' checked> All
-            <input type="radio" name="taxi" value="taxi" onclick='change(this.value)'> Taxi
-            <input type="radio" name="taxi" value="bike" onclick='change(this.value)'> Cyclists/Pedestrians
-        </div>
-    </span>
 
-    <script type="text/javascript">
-        var timelineH = 180;
-        var timelineW = 1000;
-        var h = timelineH*2;
-        var w = 800;
-        var padding = 50;
-        var paddingR = padding/2;
-        
-        // Scale for timeline viz
-        var xScaleTL, yScaleTL;
-        var timelineData;
-        var simplePath, seriousPath, fatalPath;
-        
-        // Third Chart
-        // variables for yearlyOverview chart
-        var degreeSeries, DegreesByHourType, taxiType, bikeType, neighborhoodType, typeOfAccidentType;
-        var sumValues;
-        var xScaleYear, yScaleYear, xAxisYear, yAxisYear;
-        var stack, groups, colors;
+        <button onclick="topFunction()" id="myBtn" title="Go to top"></button>
+        <script>
+            //Get the button
+            var mybutton = document.getElementById("myBtn");
 
-        var timelineSvg = d3.select("#timelineContainer").append("svg").attr("width",timelineW).attr("height",timelineH);
-        var chartSvg = d3.select("#chartContainer").append("svg").attr("width",timelineW).attr("height",h);
-        var barSvg = d3.select("#yearlyOverview").append("svg").attr("width", timelineW).attr("height", h);
-            
-        d3.csv("data/NycOverallCount.csv", function(data) {
-            timelineData = data;
-            drawTimeline(data);
-            drawChart(data);
-        });
+            // When the user scrolls down 20px from the top of the document, show the button
+            window.onscroll = function() {scrollFunction()};
 
-        d3.csv("data/NycVehicleCollisions2017_geo.csv", function(data){
-            drawBarChart2017(data);
-        });
-
-        var isInRange = function(brushCoordinates, x) {
-            var x0 = brushCoordinates[0];
-            var x1 = brushCoordinates[1];
-
-            return x0 <= x && x <= x1;
-        }
-
-        var drawTimeline = function(data) {
-            var barWidth = (timelineW - padding) / data.length - 0.2;
-
-            xScaleTL = d3.scaleTime()
-                    .domain([d3.min(data, function(d) { return new Date(d.date); }),
-                        d3.max(data, function(d) { return new Date(d.date); })])
-                    .range([padding,timelineW - paddingR]);
-            
-            yScaleTL = d3.scaleLinear().domain([0, d3.max(data, function(d) { return parseInt(d.total); })])
-                    .range([timelineH - padding, paddingR]);
-
-            timelineSvg.selectAll("rect").data(data)
-                        .enter()
-                        .append("rect")
-                        .attr("x", function(d) {
-                            return xScaleTL(new Date(d.date)) + 0.1;
-                        })
-                        .attr("y", function(d) {
-                            return yScaleTL(d.total);
-                        })
-                        .attr("height", function(d) {
-                            return timelineH - yScaleTL(d.total) - padding;
-                        })
-                        .attr("width", barWidth)
-                        .attr("fill", "darkgreen");
-            
-            var xAxisTL = d3.axisBottom(xScaleTL);
-            timelineSvg.append("g")
-                    .attr("class", "x axis")
-                    .attr("transform", "translate(0," + (timelineH - padding) + ")")
-                    .call(xAxisTL);
-            
-            var yAxisTL = d3.axisLeft(yScaleTL).ticks(4);
-            timelineSvg.append("g")
-                    .attr("class", "y axis")
-                    .attr("transform", "translate(" + padding + ",0)")
-                    .call(yAxisTL);
-            
-            // Append title to barchart
-            timelineSvg.append("text").attr("x", (timelineW / 2)).attr("y", (padding / 2))
-                    .attr("text-anchor", "middle").attr("id","title").text("Vehicle collisions in NYC");
-                
-            // Append x-axis label
-            timelineSvg.append("text")
-                .attr("class", "x label")
-                .attr("text-anchor", "middle")
-                .attr("y", timelineH - 15)
-                .attr("x", timelineW/2)
-                .attr("dy", "1em")
-                .attr("font-size", "12px")
-                .text("Day");
-                
-            // Append y-axis label
-            timelineSvg.append("text")
-                .attr("class", "y label")
-                .attr("text-anchor", "middle")
-                .attr("y", -1)
-                .attr("x", -timelineH/2)
-                .attr("dy", "1em")
-                .attr("font-size", "12px")
-                .attr("transform", "rotate(-90)")
-                .text("# of Vehicle Collisions");
-            
-            var brush = d3.brushX().extent([[padding,padding],[timelineW-paddingR,timelineH-padding]])
-                .on("end",endBrush);
-            
-            // Add brush to svg.
-            timelineSvg.append("g").attr("id","brush").call(brush);
-        }
-
-        var drawChart = function(data) {
-            var x = d3.scaleTime()
-                    .domain([d3.min(data, function(d) { return new Date(d.date); }),
-                        d3.max(data, function(d) { return new Date(d.date); })])
-                    .range([padding,timelineW - paddingR]);
-            
-            var y = d3.scaleLinear().domain([0, d3.max(data, function(d) { return parseInt(d.simple); })])
-                    .range([h - padding, 0]);
-
-            // Define line showing number of collisions per day with fatalities.
-            var fatalLine = d3.line().x(function(d) { return x(new Date(d.date)); })
-                .y(function(d) { return y(d.fatal); });
-
-            // Define line showing number of collisions per day with injuries.
-            var seriousLine = d3.line().x(function(d) { return x(new Date(d.date)); })
-                .y(function(d) { return y(d.serious); });
-            
-            // Define line showing collisions without injuries and fatalities.
-            var simpleLine = d3.line().x(function(d) { return x(new Date(d.date)); })
-                .y(function(d) { return y(d.simple); });
-
-            fatalPath = chartSvg.append("path").datum(data).attr("stroke", "red").attr("fill","none").attr("d", fatalLine);
-            seriousPath = chartSvg.append("path").datum(data).attr("stroke", "yellow").attr("fill","none").attr("d", seriousLine);
-            simplePath = chartSvg.append("path").datum(data).attr("stroke", "steelblue").attr("fill","none").attr("d", simpleLine);
-
-            var legendColors = d3.scaleOrdinal().range(["steelblue", "yellow", "red"]);
-
-            chartSvg.append('g')
-                .attr("class", "legend")
-                .attr('font-size', 11)
-                .attr('text-anchor', 'start');
- 
-            var legend = chartSvg.selectAll('.legend').selectAll('g')
-                .data(["Accidents without injuries", "Accidents with injuries", "Accidents with fatalities"])
-                .enter().append('g')
-                .attr('transform', function(d, i) { return 'translate(0,' + i * 14 + ')'; });
- 
-            legend.append('rect')
-                .attr('x', 60)
-                .attr('y', 6)
-                .attr('width', 15)
-                .attr('height', 2)
-                .attr('fill', legendColors);
- 
-            legend.append('text')
-                .attr('x', 80)
-                .attr('y', 6)
-                .attr('dy', '0.32em')
-                .text(d => d);
-
-            // Append x-axis label
-            chartSvg.append("text")
-                .attr("class", "x label")
-                .attr("text-anchor", "middle")
-                .attr("y", h - 15)
-                .attr("x", timelineW/2)
-                .attr("dy", "1em")
-                .attr("font-size", "12px")
-                .text("Day");
-                
-            // Append y-axis label
-            chartSvg.append("text")
-                .attr("class", "y label")
-                .attr("text-anchor", "middle")
-                .attr("y", -1)
-                .attr("x", -h/2)
-                .attr("dy", "1em")
-                .attr("font-size", "12px")
-                .attr("transform", "rotate(-90)")
-                .text("# of Vehicle Collisions");
-
-            var xAxis = d3.axisBottom(x);
-            chartSvg.append("g")
-                .attr("class", "x axis")
-                .attr("transform", "translate(0," + (h - padding) + ")")
-                .call(xAxis);
-            
-            var yAxis = d3.axisLeft(y);
-            chartSvg.append("g")
-                .attr("class", "y axis")
-                .attr("transform", "translate(" + padding + ",0)")
-                .call(yAxis);
-        }
-
-        var endBrush = function() {
-             if (d3.event.selection != null) {
-                 // Brushing has ended. Update graph!
-                 var brushCoordinates = d3.brushSelection(this);
-                 var filteredData = timelineData.filter(d => isInSelection(brushCoordinates, new Date(d.date)));
-                 updateGraph(filteredData);
-             } else {
-                 // Brush is removed. Show full history of collisions.
-                 updateGraph(timelineData);
-             }
-         }
- 
-         var isInSelection = function(brushCoordinates, x) {
-             var x0 = brushCoordinates[0];
-             var x1 = brushCoordinates[1];
- 
-             return x0 <= xScaleTL(x) && xScaleTL(x) <= x1;
-         }
- 
-        var updateGraph = function(data) {
-            var x = d3.scaleTime()
-                    .domain([d3.min(data, function(d) { return new Date(d.date); }),
-                         d3.max(data, function(d) { return new Date(d.date); })])
-                    .range([padding,timelineW - paddingR]);
-            
-            var y = d3.scaleLinear().domain([0, d3.max(data, function(d) { return parseInt(d.simple); })])
-                    .range([h - padding, 0]);
-            
-            // New line objects, with an updated scale.
-            var fatalLine = d3.line().x(function(d) { return x(new Date(d.date)); })
-                .y(function(d) { return y(d.fatal); });
-            var seriousLine = d3.line().x(function(d) { return x(new Date(d.date)); })
-                .y(function(d) { return y(d.serious); });
-            var simpleLine = d3.line().x(function(d) { return x(new Date(d.date)); })
-                .y(function(d) { return y(d.simple); });
-
-            // Update paths with new dataset.
-            simplePath.datum(data);
-            simplePath.transition().duration(400).attr('d', simpleLine);
-
-            seriousPath.datum(data);
-            seriousPath.transition().duration(400).attr('d', seriousLine);
-
-            fatalPath.datum(data);
-            fatalPath.transition().duration(400).attr('d', fatalLine);
- 
-             // Update axes.
-            var xAxis = d3.axisBottom(x);            
-            chartSvg.select(".x.axis").transition().duration(400).call(xAxis);
- 
-            var yAxis = d3.axisLeft(y);
-            chartSvg.select(".y.axis").transition().duration(400).call(yAxis);
-         }
-        
-        //Initial chart setup
-        var drawBarChart2017 = function(data) {
-            //seriousness degrees of crashes per hour
-            var crashDegreesByHour = d3.nest().key(function(d) { return d.hour; }).sortKeys(function(a, b) { return a - b;})
-                .key(function(d) { return d.seriousDegree; }).sortKeys(function(d) { return })
-                .rollup(function(v) { return v.length; }).entries(data);
-            
-            //data for type of accident taxi and bike.
-            var AccidentTaxi = d3.nest().key(function(d) { return d.hour; }).sortKeys(function(a, b) { return a - b;})
-                .key(function(d) { return d.seriousDegree; }).sortKeys(function(d) { return })
-                .key(function(d) { return d.taxi; }).sortKeys(function(d) { return })
-                .rollup(function(v) { return v.length; }).entries(data);
-
-            var AccidentCyclist = d3.nest().key(function(d) { return d.hour; }).sortKeys(function(a, b) { return a - b;})
-                .key(function(d) { return d.seriousDegree; }).sortKeys(function(d) { return })
-                .key(function(d) { return d.pedestrianCyclist }).sortKeys(function(d) { return })
-                .rollup(function(v) { return v.length; }).entries(data);
-
-            //data for borough
-            var neighborhood = d3.nest().key(function(d) { return d.borough.toLowerCase(); }).sortKeys(d3.ascending)
-                .key(function(d) { return d.seriousDegree; }).sortKeys(function(d) { return })
-                .rollup(function(v) { return v.length; }).entries(data);
-
-            var typeOfAccident = d3.nest().key(function(d) { return d.vehicles; }).sortKeys(function(a, b) { return a - b;})
-                .key(function(d) { return d.seriousDegree; }).sortKeys(function(d) { return })
-                .rollup(function(v) { return v.length; }).entries(data);
-
-            //Make dataset stackable
-            stack = d3.stack().keys(["One", "Two", "Three"]);
-
-            DegreesByHourType = transformDictionary(crashDegreesByHour);
-            degreeSeries = stack(DegreesByHourType);
-            taxiType = transformDictionaryTaxi(AccidentTaxi);
-            bikeType = transformDictionaryTaxi(AccidentCyclist);
-            neighborhoodType = transformDictionaryBorough(neighborhood);
-            typeOfAccidentType = transformDictionaryType(typeOfAccident);
-
-
-            //coloring [blue, yellow, red]
-            colors = ["rgb(20, 74, 122)", "rgb(244, 185, 66)", "rgb(135, 50, 40)"];
-            var colorScale = d3.scaleOrdinal().range(colors);
-
-            //Adding a group for each row
-            groups = barSvg.selectAll("g")
-				.data(degreeSeries)
-				.enter()
-				.append("g")
-				.style("fill", colorScale);
-
-            updateTime(DegreesByHourType);
-
-            xAxisYear = d3.axisBottom(xScaleYear);
-            barSvg.append("g")
-                    .attr("class", "x axis")
-                    .attr("transform", "translate(0, " + (h - padding) + ")")
-                    .call(xAxisYear);
-
-            yAxisYear = d3.axisLeft(yScaleYear);
-            barSvg.append("g")
-                    .attr("class", "y axis")
-                    .attr("transform", "translate(" + (padding + 15) + ", 0)")
-                    .call(yAxisYear);
-
-
-            // Append title to barchart
-            barSvg.append("text").attr("x", (timelineW / 2)).attr("y", (padding / 2))
-                    .attr("text-anchor", "middle").attr("id","title").text("Vehicle Collisions in NYC Shown Per Hour");
-                
-            // Append x-axis label
-            barSvg.append("text")
-                .attr("class", "x label")
-                .attr("text-anchor", "middle")
-                .attr("y", h - 20)
-                .attr("x", timelineW/2)
-                .attr("dy", "1em")
-                .attr("font-size", "12px")
-                .text("Time of Day");
-                
-            // Append y-axis label
-            barSvg.append("text")
-                .attr("class", "y label")
-                .attr("text-anchor", "middle")
-                .attr("y", -1)
-                .attr("x", -h/2)
-                .attr("dy", "1em")
-                .attr("font-size", "12px")
-                .attr("transform", "rotate(-90)")
-                .text("# of Vehicle Collisions");
-
-            groups.append('g')
-                .attr("class", "legend")
-                .attr('font-size', 10)
-                .attr('text-anchor', 'end');
-
-            var legend = groups.select(".legend").selectAll('g')
-                .data(["Accidents without injuries", "Accidents with injuries", "Accidents with fatalities"])
-                .enter().append('g')
-                .attr('transform', function(d, i) { return 'translate(0,' + i * 20 + ')'; });
-
-            legend.append('circle')
-                .attr('cx', timelineW - 19)
-                .attr('cy', 9)
-                .attr('r', 5)
-                .attr('fill', colorScale);
-
-            legend.append('text')
-                .attr('x', timelineW - 26)
-                .attr('y', 9.5)
-                .attr('fill', 'black')
-                .attr('dy', '0.32em')
-                .text(d => d);
-
-        };
-
-        //function for transforming nest dictionary for hour of day
-        var transformDictionary = function(data) {
-            var array = [];
-            for (var hour in data) {
-                var obj = {hour: hour, 
-                    One: data[hour].values[0].value, 
-                    Two: data[hour].values[1].value, 
-                    Three: data[hour].values[2].value};
-                array.push(obj);
+            function scrollFunction() {
+              if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
+                mybutton.style.display = "block";
+              } else {
+                mybutton.style.display = "none";
+              }
             }
 
-            return array;
-        }
-        
-        //function for transforming nest dictionary for taxi/cyclist
-        var transformDictionaryTaxi = function(data) {
-            var array = [];
-            for (var hour in data) {
-                var one = 0,  two = 0, three = 0;
-                if(data[hour].values[0].values[1] != null)
-                    one = data[hour].values[0].values[1].value;
-                if(data[hour].values[1].values[1] != null)
-                    two = data[hour].values[1].values[1].value;
-                if(data[hour].values[2].values[1] != null)
-                    three = data[hour].values[2].values[1].value;
-
-                var obj = {hour:hour,
-                One: one,
-                Two: two, 
-                Three: three
-                };
-                array.push(obj);
+            // When the user clicks on the button, scroll to the top of the document
+            function topFunction() {
+              document.body.scrollTop = 0;
+              document.documentElement.scrollTop = 0;
             }
-            return array;
-        }
+        </script>
 
-        //function for transforming nest dictionary for type-of-accident
-        var transformDictionaryType = function(data) {
-            var array = []; 
-            for (var key in data) {
-                var nkey = data[key].key;
-                if(nkey == '0')
-                    nkey = '1';
-                var obj = {
-                    key: nkey,
-                    One: data[key].values[0].value, 
-                    Two: data[key].values[1].value, 
-                    Three: data[key].values[2].value
-                    };
-                array.push(obj);
-            }
-            return array;
-        }
 
-        //function for transforming nest dictionary for borough
-        var transformDictionaryBorough = function(data) {
-            var array = [];
-            var unknown = 0; 
-            for (var key in data) {
-                if(data[key].key === "") unknown = data[key];
-                else if(data[key].key === "unknown"){
-                    var obj = {
-                        key: key,
-                        One: data[key].values[0].value + unknown.values[0].value,
-                        Two: data[key].values[1].value + unknown.values[1].value,
-                        Three: data[key].values[2].value + unknown.values[2].value
-                    };
-                    array.push(obj);
-                }    
-                else{
-                    var obj = {
-                        key: key,
-                        One: data[key].values[0].value,
-                        Two: data[key].values[1].value,
-                        Three: data[key].values[2].value
-                    }
-                    array.push(obj);
-                }
+    	<h1 id="header">Game of Thrones <br> Network and Text Analysis</h1>
 
-            }
-            return array;
-        }
-        
-        //OnClick function for radiobuttons
-        function change(value){
-            if(value === 'hourly'){
-                updateTime(DegreesByHourType);
-                d3.select("#taxiRadios").style("display", "inline");
-            }
-            else if(value === 'type'){
-                updateBorough(typeOfAccidentType,false);
-                d3.select("#taxiRadios").style("display", "none");
-            }
-            else if(value === 'borough'){
-                updateBorough(neighborhoodType,true);
-                d3.select("#taxiRadios").style("display", "none");
-            }
-            else if(value === 'all'){
-                updateTime(DegreesByHourType);
-            }
-            else if(value === 'taxi'){
-                updateTime(taxiType);
-            }
-            else if(value === 'bike'){
-                updateTime(bikeType);
-            }
-        }
+    	<h2 id = "idea">Project's main idea</h2>
+    	<p>Game of Thrones is a series of fantasy book novels which became a TV series in 2011. In this show, there are many houses which claim the reign of the Kingdom of Westeros and the Iron Throne. There are others who want to win their indipendancy. Between these houses there are aliases as well as conflicts. The final season was going to answer some basic questions regarding the main characters, the most important questions are as followings; <i>Who is going to be the heir of the Iron Throne?</i> and <i>Did the ending satisfy the fans?</i></p>
 
-        //Function for updating hour-of-day chart
-        function updateTime(data){
-            //clear svg
-            var selection = barSvg.selectAll('g')
-                .data(data);
+    	<p>Our main idea is to give insights regarding the character connections for those who haven't seen the series yet. Therefore, first we show the way the main characters connect with each other, and the houses they represent. As it is well known, conflits are occuring between houses. Therefore, connecting houses with the character is important for our case. We will compare the sentiment between seasons and episodes separately and finally, analyze tweets referred to this final season and perform text and sentiment analysis.</p>
 
-            groups.selectAll("rect")
-                    .merge(selection)
-                    .remove()
-                    .exit();
+    	<h2 id = "interest">Why are we interested</h2>
+    	<p>We were fans of the show and really excited about the release of the final season. Some of us were not really satified about the ending and thus, we wanted to investigate whether other fans had the same opinion with us. Also, the network analysis will give users who haven't watched the show a slight idea about the story & the characters and might get their interest.</p>
 
-            sumValues = function(d) {
-                return d.One + d.Two + d.Three;
-            }
+    	<h2 id = "data">Datasets</h2>
+    	<p>We used three datasets for our project. The first one, is the <a href="https://gameofthrones.fandom.com/wiki/Game_of_Thrones_Wiki">Game of Thrones Wiki</a>, which we used to get the information about the charactes and then create the network. The second one is the <a href="https://www.springfieldspringfield.co.uk/">Movie Transcript Database</a>which we used to get the plot summary of every season and the every episode's script, in order to use it later for sentiment analysis. After downloading the wiki pages needed, we end up having 80 files for the characters, 8 txt files with the plot of every season and 73 txt files with the script of every episode. The last dataset is the Game of Thrones S8 Twitter, which we acquired from the <a href="https://www.kaggle.com/monogenea/game-of-thrones-twitter">Kaggle</a>, and contains tweets relevant to the final season. This dataset contains a csv file of size 698MB. Initially, it had 760,661 observations and 88 attributes, most of them being useless so after preprocessing our dataset the final size is 35MB with 121,458 observations abd 17 attributes.</p>
 
-            groups.data(stack(data));
-            
-            xScaleYear = d3.scaleBand()
-                    .domain(d3.range(24))
-                    .rangeRound([0,timelineW])
-                    .paddingInner(0.05)
-                    .range([padding + 15, timelineW - paddingR]);
+    	<h2 id = "plan">Plan</h2>
+    	<p> First of all, with the Wiki dataset we have created the network showing how characters connected with one another. In order to do so, we downloaded the wikipages through an API so in the end, we have 80 files, as many as our characters. Furthermore, we processed every season's scripts with the data of movie transcript database. Then we obtained the scripts of each episode. At the end of our analysis, we applied sentiment analysis for each season and episode. Lastly, we analyzed text from the tweets. This is achieved by removing hashtags, tags and emojis and keeping the main text of the tweets. The main goal is to perform sentiment analysis again, so we can understand how Twitter users feel about the ending of the show.</p>
 
-            yScaleYear = d3.scaleLinear()
-                .domain([0, d3.max(data, sumValues)])
-                    .range([h - padding, padding]);
+    	<h2 id = "network">Network Analysis</h2>
+        <p>The first thing we are interested is to create a network to show how characters connect with each other. In order to so, we downloaded the wiki page containing information for every character, which is going to be a node in our network. In the character's page there are links to other characters pages, this indicating that these characters connect which means that we have an edge between them. The number of appearances in the characters page is going to be the weight of every edge. Doing this procedure for every character, we acquire the following network.</p>
+        <figure>
+        <img src="images/Network of Characters.png" style="width:100%;height:70%;margin-left:-15%;">
+        <figcaption>Fig.1 - The network of characters</figcaption>
+        </figure>
+        <p>When we draw the graph, we want to distinguish the house of every charcter belongs to and thus we color every node according to the different colors. (Our threshold is 3. If there are 3 or more members of a house we specify each house with a color. If number of house members are less than 3 they are colored as 'blue'.) There are some characters which doesn't belong to a known house. Therefore they are classified as 'Unknown' and their color is 'darkred'. We create a list with colors according to the character and we set every nodes size proportional to its degree. The following plot shows the degree distribution of the network.</p>
+        <figure>
+        <img src="images/deg_distr.jpg" style="width:100%;height:70%">
+        <figcaption>Fig.2 - Degree distribution</figcaption>
+        </figure>
+        <p>The average degree of the network is 41.85, meaning that each node on average has a high number of links. It can be seen that the degree distriution resembles a poisson distribution, meaning that the network is similar to a random network.</p>
+        <p>As a next step, we want to examine how eigenvector centrality and betweenness centrality are going to affect our graph. Eigenvector centrality is a network measure where nodes tend to connect with nodes with the simiral eigenvector score. This measure can show us how a node can influence the graph. On the other hand betweenness centrality is a meausre based on the shortest path between nodes. The results after applying these two measures in our graph can be seen below.</p>
+        <figure>
+        <img src="images/Eigenvector Centrality.png" style="width:100%;height:70%">
+        <figcaption>Fig.3 - Network based on eigenvector centrality</figcaption>
+        </figure>
+        <p>For the Eigenvector Centrality above, there are more than one nodes which has higher values of eigenvector centrality. Because during the series, there were so many powerful characters which have influenced series and stories a lot. Therefore the nodes which have bigger nodes are the ones affecting most.
+        </p>
+        <figure>
+        <img src="images/Betweenness Centrality.png" style="width:100%;height:70%">
+        <figcaption>Fig.4 - Network based on betweeness centrality</figcaption>
+        </figure>
+        <p>For the Betweenness Centrality graph above, some characters has high values of betweennes centrality since they are really related in the movie as a part of the script. There are direct communication between this characters, therefore shortest path is created in this relation. Especially main characters should have higher values since they are connected to directly or at least they acts as a bridge along the shorthest path between nodes.</p>
+        <p>Nodes still remain colored according to the house they belong to but their size changes. Looking at the different houses as communities the marginality measure can be used, to examine whether these communities provide a good parition of the network. The maginality measure for this community is 0.3678, meaning that this is a decent partition of the network, however far away from the perfect partition.</p>
+        <p>So far we made the coloring of each node according to the house they represent. But is this the best partition that can be done? The final step is to examine if there is a better partition in our network. Using the Python Louvrain algorithm for community detection, a partition with marginality 0.4478 is found. This partition is therefore better than using the houses as community. The network created can be seen in the following drawing.</p>
+        <figure>
+        <img src="images/Community Detection.png" style="width:100%;height:70%">
+        <figcaption>Fig.5 - Network based on partition</figcaption>
+        </figure>
+        <p>As we can see from the figure, there are less partition than the number of houses we have defined. Specifically, we notice about 5 to 6 different partitions but actually we have 15 houses. Looking a bit into the partition some interesting observations can be made. I.e. Ned Stark and Robert Baratheon are in the same partition, which makes sense since the two work closesly together in the first season, where Ned serves as hand to king Robert. Similarly Arya Stark and The Hound are in the same community, when they travel together thorugh Westeros.</p>
+        <p>In order to better understand the graph, it's better to create the confusion matrix for it. In the confusion matrix we compare the actual partitions of the nodes, which are the houses they are part and the partitions created by the algorithm. The result is shown in the matrix below. </p> 
+        <table style="height: 330px; width: 600px; margin-left: 10%;">
+        <tbody>
+        <tr style="height: 22px;">
+        <td style="width: 72px; height: 22px;">&nbsp;</td>
+        <td style="width: 72px; height: 22px;">&nbsp;</td>
+        <td style="width: 40px; height: 22px;">&nbsp;</td>
+        <td style="width: 72px; height: 22px;">&nbsp;</td>
+        <td style="width: 64px; height: 22px;">&nbsp;</td>
+        <td style="width: 69px; height: 22px;">&nbsp;</td>
+        <td style="width: 36px; height: 22px;">&nbsp;</td>
+        <td style="width: 59.6px; height: 22px;">Actual</td>
+        <td style="width: 39.4px; height: 22px;">partition</td>
+        <td style="width: 49px; height: 22px;">&nbsp;</td>
+        <td style="width: 49px; height: 22px;">&nbsp;</td>
+        <td style="width: 55px; height: 22px;">&nbsp;</td>
+        <td style="width: 62px; height: 22px;">&nbsp;</td>
+        <td style="width: 40px; height: 22px;">&nbsp;</td>
+        <td style="width: 65px; height: 22px;">&nbsp;</td>
+        </tr>
+        <tr style="height: 22px;">
+        <td style="width: 72px; height: 22px;">&nbsp;</td>
+        <td style="width: 72px; height: 22px;">&nbsp;</td>
+        <td style="width: 40px; height: 22px;">S</td>
+        <td style="width: 72px; height: 22px;">B</td>
+        <td style="width: 64px; height: 22px;">L</td>
+        <td style="width: 69px; height: 22px;">Tgr</td>
+        <td style="width: 36px; height: 22px;">Tr</td>
+        <td style="width: 59.6px; height: 22px;">K</td>
+        <td style="width: 39.4px; height: 22px;">Trll</td>
+        <td style="width: 49px; height: 22px;">M</td>
+        <td style="width: 49px; height: 22px;">Ubr</td>
+        <td style="width: 55px; height: 22px;">G</td>
+        <td style="width: 62px; height: 22px;">Mrm</td>
+        <td style="width: 40px; height: 22px;">A</td>
+        <td style="width: 65px; height: 22px;">U</td>
+        </tr>
+        <tr style="height: 22px;">
+        <td style="width: 72px; height: 22px;">&nbsp;</td>
+        <td style="width: 72px; height: 22px;">S</td>
+        <td style="width: 40px; height: 22px;">2</td>
+        <td style="width: 72px; height: 22px;">3</td>
+        <td style="width: 64px; height: 22px;">0</td>
+        <td style="width: 69px; height: 22px;">0</td>
+        <td style="width: 36px; height: 22px;">0</td>
+        <td style="width: 59.6px; height: 22px;">1</td>
+        <td style="width: 39.4px; height: 22px;">1</td>
+        <td style="width: 49px; height: 22px;">2</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 55px; height: 22px;">0</td>
+        <td style="width: 62px; height: 22px;">0</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 65px; height: 22px;">0</td>
+        </tr>
+        <tr style="height: 22px;">
+        <td style="width: 72px; height: 22px;">&nbsp;</td>
+        <td style="width: 72px; height: 22px;">B</td>
+        <td style="width: 40px; height: 22px;">1</td>
+        <td style="width: 72px; height: 22px;">0</td>
+        <td style="width: 64px; height: 22px;">2</td>
+        <td style="width: 69px; height: 22px;">0</td>
+        <td style="width: 36px; height: 22px;">0</td>
+        <td style="width: 59.6px; height: 22px;">1</td>
+        <td style="width: 39.4px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 55px; height: 22px;">0</td>
+        <td style="width: 62px; height: 22px;">2</td>
+        <td style="width: 40px; height: 22px;">1</td>
+        <td style="width: 65px; height: 22px;">0</td>
+        </tr>
+        <tr style="height: 22px;">
+        <td style="width: 72px; height: 22px;">&nbsp;</td>
+        <td style="width: 72px; height: 22px;">L</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 72px; height: 22px;">1</td>
+        <td style="width: 64px; height: 22px;">2</td>
+        <td style="width: 69px; height: 22px;">0</td>
+        <td style="width: 36px; height: 22px;">0</td>
+        <td style="width: 59.6px; height: 22px;">0</td>
+        <td style="width: 39.4px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 55px; height: 22px;">0</td>
+        <td style="width: 62px; height: 22px;">2</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 65px; height: 22px;">0</td>
+        </tr>
+        <tr style="height: 22px;">
+        <td style="width: 72px; height: 22px;">&nbsp;</td>
+        <td style="width: 72px; height: 22px;">Tgr</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 72px; height: 22px;">0</td>
+        <td style="width: 64px; height: 22px;">0</td>
+        <td style="width: 69px; height: 22px;">1</td>
+        <td style="width: 36px; height: 22px;">2</td>
+        <td style="width: 59.6px; height: 22px;">0</td>
+        <td style="width: 39.4px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 55px; height: 22px;">0</td>
+        <td style="width: 62px; height: 22px;">0</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 65px; height: 22px;">0</td>
+        </tr>
+        <tr style="height: 22px;">
+        <td style="width: 72px; height: 22px;">&nbsp;</td>
+        <td style="width: 72px; height: 22px;">Tr</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 72px; height: 22px;">0</td>
+        <td style="width: 64px; height: 22px;">0</td>
+        <td style="width: 69px; height: 22px;">0</td>
+        <td style="width: 36px; height: 22px;">5</td>
+        <td style="width: 59.6px; height: 22px;">0</td>
+        <td style="width: 39.4px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 55px; height: 22px;">0</td>
+        <td style="width: 62px; height: 22px;">0</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 65px; height: 22px;">0</td>
+        </tr>
+        <tr style="height: 22px;">
+        <td style="width: 72px; height: 22px;">&nbsp;</td>
+        <td style="width: 72px; height: 22px;">K</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 72px; height: 22px;">0</td>
+        <td style="width: 64px; height: 22px;">0</td>
+        <td style="width: 69px; height: 22px;">0</td>
+        <td style="width: 36px; height: 22px;">0</td>
+        <td style="width: 59.6px; height: 22px;">0</td>
+        <td style="width: 39.4px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">5</td>
+        <td style="width: 55px; height: 22px;">0</td>
+        <td style="width: 62px; height: 22px;">0</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 65px; height: 22px;">0</td>
+        </tr>
+        <tr style="height: 22px;">
+        <td style="width: 72px; height: 22px;">Predicted</td>
+        <td style="width: 72px; height: 22px;">Trll</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 72px; height: 22px;">0</td>
+        <td style="width: 64px; height: 22px;">4</td>
+        <td style="width: 69px; height: 22px;">0</td>
+        <td style="width: 36px; height: 22px;">0</td>
+        <td style="width: 59.6px; height: 22px;">0</td>
+        <td style="width: 39.4px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 55px; height: 22px;">0</td>
+        <td style="width: 62px; height: 22px;">0</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 65px; height: 22px;">0</td>
+        </tr>
+        <tr style="height: 22px;">
+        <td style="width: 72px; height: 22px;">partition</td>
+        <td style="width: 72px; height: 22px;">M</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 72px; height: 22px;">0</td>
+        <td style="width: 64px; height: 22px;">0</td>
+        <td style="width: 69px; height: 22px;">0</td>
+        <td style="width: 36px; height: 22px;">0</td>
+        <td style="width: 59.6px; height: 22px;">0</td>
+        <td style="width: 39.4px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 55px; height: 22px;">0</td>
+        <td style="width: 62px; height: 22px;">4</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 65px; height: 22px;">0</td>
+        </tr>
+        <tr style="height: 22px;">
+        <td style="width: 72px; height: 22px;">&nbsp;</td>
+        <td style="width: 72px; height: 22px;">Ubr</td>
+        <td style="width: 40px; height: 22px;">1</td>
+        <td style="width: 72px; height: 22px;">1</td>
+        <td style="width: 64px; height: 22px;">0</td>
+        <td style="width: 69px; height: 22px;">0</td>
+        <td style="width: 36px; height: 22px;">0</td>
+        <td style="width: 59.6px; height: 22px;">0</td>
+        <td style="width: 39.4px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">1</td>
+        <td style="width: 55px; height: 22px;">0</td>
+        <td style="width: 62px; height: 22px;">0</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 65px; height: 22px;">0</td>
+        </tr>
+        <tr style="height: 22px;">
+        <td style="width: 72px; height: 22px;">&nbsp;</td>
+        <td style="width: 72px; height: 22px;">G</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 72px; height: 22px;">0</td>
+        <td style="width: 64px; height: 22px;">0</td>
+        <td style="width: 69px; height: 22px;">0</td>
+        <td style="width: 36px; height: 22px;">0</td>
+        <td style="width: 59.6px; height: 22px;">0</td>
+        <td style="width: 39.4px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 55px; height: 22px;">3</td>
+        <td style="width: 62px; height: 22px;">0</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 65px; height: 22px;">0</td>
+        </tr>
+        <tr style="height: 22px;">
+        <td style="width: 72px; height: 22px;">&nbsp;</td>
+        <td style="width: 72px; height: 22px;">Mrm</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 72px; height: 22px;">0</td>
+        <td style="width: 64px; height: 22px;">0</td>
+        <td style="width: 69px; height: 22px;">0</td>
+        <td style="width: 36px; height: 22px;">2</td>
+        <td style="width: 59.6px; height: 22px;">0</td>
+        <td style="width: 39.4px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 55px; height: 22px;">0</td>
+        <td style="width: 62px; height: 22px;">0</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 65px; height: 22px;">1</td>
+        </tr>
+        <tr style="height: 22px;">
+        <td style="width: 72px; height: 22px;">&nbsp;</td>
+        <td style="width: 72px; height: 22px;">A</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 72px; height: 22px;">0</td>
+        <td style="width: 64px; height: 22px;">0</td>
+        <td style="width: 69px; height: 22px;">0</td>
+        <td style="width: 36px; height: 22px;">0</td>
+        <td style="width: 59.6px; height: 22px;">0</td>
+        <td style="width: 39.4px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">3</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 55px; height: 22px;">0</td>
+        <td style="width: 62px; height: 22px;">0</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 65px; height: 22px;">0</td>
+        </tr>
+        <tr style="height: 22px;">
+        <td style="width: 72px; height: 22px;">&nbsp;</td>
+        <td style="width: 72px; height: 22px;">U</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 72px; height: 22px;">0</td>
+        <td style="width: 64px; height: 22px;">0</td>
+        <td style="width: 69px; height: 22px;">3</td>
+        <td style="width: 36px; height: 22px;">2</td>
+        <td style="width: 59.6px; height: 22px;">3</td>
+        <td style="width: 39.4px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 49px; height: 22px;">0</td>
+        <td style="width: 55px; height: 22px;">0</td>
+        <td style="width: 62px; height: 22px;">2</td>
+        <td style="width: 40px; height: 22px;">0</td>
+        <td style="width: 65px; height: 22px;">0</td>
+        </tr>
+        </tbody>
+        </table>
+        <p>where 
+        <table align="center" style="width: 45px;">
+        <tbody>
+        <tr>
+        <td style="width: 28px;">S</td>
+        <td style="width: 16px;">Stark</td>
+        </tr>
+        <tr>
+        <td style="width: 28px;">B</td>
+        <td style="width: 16px;">Baratheon</td>
+        </tr>
+        <tr>
+        <td style="width: 28px;">L</td>
+        <td style="width: 16px;">Lannister</td>
+        </tr>
+        <tr>
+        <td style="width: 28px;">Tgr</td>
+        <td style="width: 16px;">Targaryen</td>
+        </tr>
+        <tr>
+        <td style="width: 28px;">Tr</td>
+        <td style="width: 16px;">Tarly</td>
+        </tr>
+        <tr>
+        <td style="width: 28px;">K</td>
+        <td style="width: 16px;">Karstark</td>
+        </tr>
+        <tr>
+        <td style="width: 28px;">Trll</td>
+        <td style="width: 16px;">Tyrell</td>
+        </tr>
+        <tr>
+        <td style="width: 28px;">M</td>
+        <td style="width: 16px;">Martel</td>
+        </tr>
+        <tr>
+        <td style="width: 28px;">Ubr</td>
+        <td style="width: 16px;">Umber</td>
+        </tr>
+        <tr>
+        <td style="width: 28px;">G</td>
+        <td style="width: 16px;">Greyjoy</td>
+        </tr>
+        <tr>
+        <td style="width: 28px;">Mrm</td>
+        <td style="width: 16px;">Mormont</td>
+        </tr>
+        <tr>
+        <td style="width: 28px;">A</td>
+        <td style="width: 16px;">Arryn</td>
+        </tr>
+        <tr>
+        <td style="width: 28px;">U</td>
+        <td style="width: 16px;">Unknown</td>
+        </tr>
+        </tbody>
+        </table>
+        </p>
+        <div id="gtx-trans" style="position: absolute; left: 147px; top: 11px;">&nbsp;</div>
+        <p>Only the houses of Tarly, Karstark, Tyrell, Martell, Greyjoy and Arryn have all members just assigned to one specific partition. We don't expect Stark, Baratheon, Targaryen, Lannister houses to be assigned just to one specific partition because member of these houses have very important characters for the series. For that reason, members of these house are being involved in different partitions upon the subjects such as wars, complots, suicides, assassinations  etc.</p>
 
-            var enterBars = groups.selectAll("rect")
-                .data(function (d) {return d; })
-                .enter()
-                .append("rect")
-                .attr('y', h - padding)
-                .attr('x', (d,i) => { return xScaleYear(i);});
+        <h2 id = "series-development">Evolution of the Show</h2>
+        <p>Over the eight seasons that the show has run, the fans have become increasingly frustrated.</p>
 
-            enterBars
-                .merge(groups)
-                .transition()
-                .delay((d,i) => i * 50)
-                .attr("x", function(d, i) { return xScaleYear(i); })
-                .attr("y", function(d) { return yScaleYear(d[1]); })
-                .attr("height", function(d) { return yScaleYear(d[0]) - yScaleYear(d[1]); })
-                .attr("width", xScaleYear.bandwidth());
+        <figure>
+        <img src="images/season_graphs.png" style="width:100%;height:70%">
+        <figcaption>Fig.6 - Season node and edge count</figcaption>
+        </figure>
 
-            enterBars
-                .on("mouseover", function(d) {
-                    var xPosition = parseFloat(d3.select(this).attr("x")) + xScaleYear.bandwidth() / 2 + 90;
-                    var yPosition = parseFloat(d3.select(this).attr("y"));
+        <figure>
+        <img src="images/avg_deg_season.png" style="width:100%;height:70%">
+        <figcaption>Fig.7 - Average node and edge count</figcaption>
+        </figure>
 
-                    d3.select("#tooltip")
-                        .style("left", (xPosition + document.getElementById("yearlyOverview").offsetLeft) + "px")
-                        .style("top", (yPosition + document.getElementById("yearlyOverview").offsetTop) + "px")						
-                        .transition()
-                        .duration(500)
-                        .style("opacity", 0.9)
-                        .select("#non-value")
-                        .text(d.data.One)
-                    d3.select("#tooltip")
-                        .select("#serious-value")
-                        .text(d.data.Two)
-                    d3.select("#tooltip")
-                        .select("#fatal-value")
-                        .text(d.data.Three);
+    	<h2 id = "text">Text Analysis</h2>
+        <p>In our text analysis we are going to examine the sentiment distribution throughout the seasons in overall and the episodes and we wil focus on the analysis of the final season based on tweets. First of all, we calculated sentiment in all seasons based on the plot summary of each one of them. The sentiment distribution can be seen in the following figure.</p>
+        <figure>
+        <img src="images/season_sentiments.png" style="width:100%;height:70%">
+        <figcaption>Fig.8 - Seasons sentiment analysis</figcaption>
+        </figure>
+        <p>As we can see, the average sentiment is high which means people liked the show. However, the peak can be noticed in season 5, where there were great battles and major deaths. For those who have watched the show (those who haven't sorry for the spoiler), in the end of 5th season Jon Snow died and it a huge surprise for the fans because they couldn't believe it. After that, there is a declination trend and the biggest one being in season 7, since winter was coming for all of them. As mentioned above, the show is based on novels and the producers were trying to end the show thus skipping many details from the books. This is why we see this decline in after season 5.</p>
+        <p>Afterwards, we are going to calculate the sentiment for each episode separately according to this plot. The variance of sentiment can be shown in the plot followed.</p>
+        <figure>
+        <img src="images/episode_sentiments.png" style="width:100%;height:70%">
+        <figcaption>Fig.9 - Episodes sentiment analysis</figcaption>
+        </figure>
+        <p>As happened in the season analysis, the decline in certain episodes is connected to the death of favorite characters. For example, the drop in episode 9 is connected to the death of Edward Stark, a character every fan loved. The biggest drop can be seen in episode 49 and is also linked to the death of a little girl, something that made fans sad. As an overall, there's no much difference in the sentiment of every episode. And it is so normal to have up and downs between the episodes.</p>
+        <p>Another thing that could point to a change in the show, was the amount of dialog in the show. To investigate this, the number of meaningfull words, meaning words that aren't stopwords, have been summed for each episode. The result is shown in Figure 8. </p>
+        <figure>
+        <img src="images/episode_words.png" style="width:100%;height:70%">
+        <figcaption>Fig.10 - Episode Wordcount</figcaption>
+        </figure>
+        <p>Again there is not a clear trend of the amount of dialog going down, but there is still some interesting points to make. Looking at the first 30 episodes there is a slight tendency for the word count to increase. Then the trend turns towards less dialog, and then in the final two seasons the amount of dialog in the episode tend to vary a lot. This could point towards the point that the final seasons had more focus on the action packed scenes, and therefore the wordcount varies from the very dialog-heavy episodes, then followed by a battle episode which is very low in dialog.</p>
+        <p>The last part of our analysis includes the sentiment analysis of the final season based on tweets. The first step is computing <a href = "https://en.wikipedia.org/wiki/Tf%E2%80%93idf">tf-idf</a> in our dataset and the result is to get the most frequent words of it. So we obtained the wordcloud which shows these terms, proportional to their font size.</p>
+        <figure>
+        <img src="images/GOTwordcloud.png" style="width:100%;height:70%">
+        <figcaption>Fig.11 - Game of Thrones WordCloud</figcaption>
+        </figure>
+        <p>As can be noticed, there are terms like <i>last</i>, <i>season</i>, <i>night</i>, <i>show</i>, <i>snow</i>, <i>throne</i> and <i>battle</i> are some of the examples. These terms are explicitly related to the final season. Afterwards, we have performed sentiment analysis.</p>
+        <figure>
+        <img src="images/sentimentPlot.png" style="width:100%;height:70%">
+        <figcaption>Fig.12 - Tweet Sentiments</figcaption>
+        </figure>
+        <p>From the plot above, we can conclude that by putting a threshold in the sentiment value, we can distinct the tweets in two groups: positive and negatives. The wordclouds are shown below.</p>
+        <figure>
+        <img src="images/GOTwordcloud Positive Tweets.png" style="width:100%;height:70%">
+        <figcaption>Fig.13 - Positive Tweets Wordcloud</figcaption>
+        </figure>
+        <figure>
+        <img src="images/GOTwordcloudNegative Tweets.png" style="width:100%;height:70%">
+        <figcaption>Fig.14 - Negative Tweets Wordcloud</figcaption>
+        </figure>
+        <p>From the wordclouds the tweets are not explicitly distinguished but some of the words are interpretable regarding their meanings in the series and generally. For example, in the negative wordcloud <i>never</i> can imply a negative sentiment. There is also the word <i>love</i> has a positive sentiment however, inside the tweet with hashtags and other words it can be affected for example, love between some characters may not be approved by some fans and it may result <i>love</i> in the negative wordcloud. Regarding positive wordcloud, the <i>night</i> and <i>tonight</i> terms might refer the excitement of the audience for the release of a new episode.</p>
+        <p>The final analysis is relevant to finding the average sentiment for each character and showing the comparison. The result is shown in the plot below.</p>
+        <figure>
+        <img src="images/AverageSentimentforCharacter.png" style="width:100%;height:70%">
+        <figcaption>Fig.15 - Average characters' sentiment</figcaption>
+        </figure>
+        <p>From this plot we can see that suprisingly that Randyll Tarly is the most liked character despite the fact that he appeared in a few episodes but maybe the characters were impressed by the actor's performance. The least liked is Yohn Royce, since he appeared in a few episodes as well and fans didn't give any attention to him.</p>
+        <p>To investigate whether there is a connection between the fans opinion on the characters and there links in the network community detection is used. The characters in the network are divided into three communities. One for the characters that is liked, one for the disliked characters, and the final for those not mentioned on twitter. This partition has a marginality measure of 0.2, meaning that it is not a very good partition of the network.</p>
 
-                    d3.select("#tooltip").classed("hidden", false);
-                    })
-                    .on("mouseout", function() {
-                    d3.select("#tooltip")
-                        .transition()
-                        .duration(200)
-                        .style("opacity", 0);
-
-                    });
-            
-            yAxisYear = d3.axisLeft(yScaleYear);
-            barSvg.select(".y.axis").transition().duration(500).call(yAxisYear);
-
-            xAxisYear = d3.axisBottom(xScaleYear);
-            barSvg.select(".x.axis").transition().duration(500).call(xAxisYear);
-
-            barSvg.select("#title").transition().duration(500).text("Vehicle Collisions in NYC Shown Per Hour");
-            barSvg.select(".x.label").transition().duration(500).text("Time of Day");
-            barSvg.select(".y.label").transition().duration(500).text("# of Vehicle Collisions");
-        }
-
-        //Function for updating Boroughs and Type-of-Accident
-        function updateBorough(data, isborough){
-            var boroughs = ['Bronx', 'Brooklyn', 'Manhatten', 'Queens', 'Staten Island', 'Unknown'];
-            barSvg.select("#title").transition().duration(500).text("Vehicle Collisions in NYC Shown Per Borough");
-            barSvg.select(".x.label").transition().duration(500).text("Borough");
-            barSvg.select(".y.label").transition().duration(500).text("# of Vehicle Collisions");
-            if(!isborough){
-                boroughs = ['Solo Accident', 'Two Cars', 'Three Cars', 'Four Cars', 'Five Cars', 'Six Cars'];
-                barSvg.select("#title").transition().duration(500).text("Vehicle Collisions in NYC Shown for Type of Accident");
-                barSvg.select(".x.label").transition().duration(500).text("Number of Vehicles involved");
-                barSvg.select(".y.label").transition().duration(500).text("# of Vehicle Collisions");
-            }
-
-            barSvg.selectAll("rect")
-                .remove()
-                .exit()
-                .data(data);
-
-            var newdata = stack(data);
-
-            sumValues = function(d) {
-                return d.One + d.Two + d.Three;
-            }
-
-            xScaleYear = d3.scaleBand()
-                    .domain(boroughs)
-                    .rangeRound([0,timelineW])
-                    .paddingInner(0.05)
-                    .range([padding + 15, timelineW - paddingR]);
-
-            yScaleYear = d3.scaleLinear()
-                    .domain([0, d3.max(data, sumValues) ])
-                    .range([h - padding, padding]);
-
-            groups.data(newdata);
-
-            var enterBars = groups.selectAll("rect")
-                .data(function (d) {return d; })
-                .enter()
-                .append("rect")
-                .attr('y', h-padding)
-                .attr('x', (d,i) => { return xScaleYear(boroughs[i]); });
-            
-            enterBars
-                .merge(groups)
-                .transition()
-                .delay((d,i) => i * 50)
-                .attr("x", function(d, i) { return xScaleYear(boroughs[i]); })
-                .attr("y", function(d) { return yScaleYear(d[1]); })
-                .attr("height", function(d) { return yScaleYear(d[0]) - yScaleYear(d[1]); })
-                .attr("width", xScaleYear.bandwidth());
-
-            enterBars
-                .on("mouseover", function(d) {
-                    var xPosition = parseFloat(d3.select(this).attr("x")) + xScaleYear.bandwidth() / 2 + 100;
-                    var yPosition = parseFloat(d3.select(this).attr("y"));
-
-                    d3.select("#tooltip")
-                        .style("left", (xPosition + document.getElementById("yearlyOverview").offsetLeft) + "px")
-                        .style("top", (yPosition + document.getElementById("yearlyOverview").offsetTop) + "px")						
-                        .transition()
-                        .duration(500)
-                        .style("opacity", 0.9)
-                        .select("#non-value")
-                        .text(d.data.One)
-                    d3.select("#tooltip")
-                        .select("#serious-value")
-                        .text(d.data.Two)
-                    d3.select("#tooltip")
-                        .select("#fatal-value")
-                        .text(d.data.Three);
-
-                    d3.select("#tooltip").classed("hidden", false);
-                    })
-                .on("mouseout", function() {
-                d3.select("#tooltip")
-                    .transition()
-                    .duration(200)
-                    .style("opacity", 0);
-
-                });
-
-            yAxisYear = d3.axisLeft(yScaleYear);
-            barSvg.select(".y.axis").transition().duration(500).call(yAxisYear);
-
-            xAxisYear = d3.axisBottom(xScaleYear);
-            barSvg.select(".x.axis").transition().duration(500).call(xAxisYear);
-            
-
-        }
-    </script>
+    	<h2 id = "more">More Information</h2>
+    	<p>If you want more details about our project or want to take a deeper look in the technical part, you can read our <a href="ExplainerNotebook.ipynb">explainer notebook</a>.</p>
+    </article> 
 </body>
 </html>

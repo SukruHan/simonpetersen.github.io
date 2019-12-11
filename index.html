@@ -17,6 +17,7 @@
           <li><a href="#data">Datasets</a></li>
           <li><a href="#plan">Plan</a></li>
           <li><a href="#network">Network Analysis</a></li>
+          <li><a href="#series-development">Series Development</a></li>
           <li><a href="#text">Text Analysis</a></li>
           <li><a href="#more">More Info</a></li>
         </ul>
@@ -27,16 +28,16 @@
     	<h2 id = "idea">Project's main idea</h2>
     	<p>Game of Thrones is a series of fantasy book novels which became a TV series in 2011. In this show, there are many houses which claim the reign of the Kingdom of Westeros and the Iron Throne. There are others who want to win their indipendancy. Between these houses there are aliases as well as conflicts. The final season was going to answer some basic questions regarding the main characters, the most important questions are as followings; <i>Who is going to be the heir of the Iron Throne?</i> and <i>Did the ending satisfy the fans?</i></p>
 
-    	<p>Our main idea is to give insights regarding the character connections for those who haven't seen the series yet. Therefore, first we show the way the main characters connect with each other, and the houses they represent. As it is well known, conflits are occuring between houses. Therefore, connecting houses with the character is important for our case. We will compare the sentiment between seasons and episodes separately and finally, analyze tweets referred to this final season and perform text and sentiment analysis.</p>
+    	<p>Our main idea is to give insights regarding the character connections for those who haven't seen the series yet. Therefore, first we show the way the main characters connect with each other, and the houses they represent. As it is well known, conflits are occuring between houses. Therefore, connecting houses with the character is important for our case. We will investigate what kind of changes have been made over the seasons, and finally analyze tweets regarding the final season.</p>
 
     	<h2 id = "interest">Why are we interested</h2>
     	<p>We were fans of the show and really excited about the release of the final season. Some of us were not really satified about the ending and thus, we wanted to investigate whether other fans had the same opinion with us. Also, the network analysis will give users who haven't watched the show a slight idea about the story & the characters and might get their interest.</p>
 
     	<h2 id = "data">Datasets</h2>
-    	<p>We used three datasets for our project. The first one, is the <a href="https://gameofthrones.fandom.com/wiki/Game_of_Thrones_Wiki">Game of Thrones Wiki</a>, which we used to get the information about the charactes and then create the network. The second one is the <a href="https://www.springfieldspringfield.co.uk/">Movie Transcript Database</a>which we used to get the script for every episode, in order to use it later for sentiment analysis. After downloading the wiki pages needed, we end up having 80 files for the characters, and 73 txt files with the script of every episode. The last dataset is the Game of Thrones S8 Twitter, which we acquired from the <a href="https://www.kaggle.com/monogenea/game-of-thrones-twitter">Kaggle</a>, and contains tweets relevant to the final season. This dataset contains a csv file of size 698MB. Initially, it had 760,661 observations and 88 attributes, most of them being useless so after preprocessing our dataset the final size is 35MB with 121,458 observations abd 17 attributes.</p>
+    	<p>We used three datasets for our project. The first one, is the <a href="https://gameofthrones.fandom.com/wiki/Game_of_Thrones_Wiki">Game of Thrones Wiki</a>, which we used to get the information about the charactes and then create the network. The second one is the <a href="https://www.springfieldspringfield.co.uk/">Movie Transcript Database</a>which we used to get the script for every episode, in order to use it later for sentiment analysis. After downloading the wiki pages, we end up having 80 files for the characters, and 73 txt files with the script of every episode. The last dataset is the Game of Thrones S8 Twitter, which we acquired from <a href="https://www.kaggle.com/monogenea/game-of-thrones-twitter">Kaggle</a>, and contains tweets relevant to the final season. This dataset contains a csv file of size 698MB. Initially, it had 760,661 observations and 88 attributes, most of them being useless so after preprocessing our dataset the final size is 35MB with 121,458 observations and 17 attributes.</p>
 
     	<h2 id = "plan">Plan</h2>
-    	<p> First of all, with the Wiki dataset we have created the network showing how characters connected with one another. In order to do so, we downloaded the wikipages through an API so in the end, we have 80 files, as many as our characters. Furthermore, we processed every season's scripts with the data of movie transcript database. Then we obtained the scripts of each episode. At the end of our analysis, we applied sentiment analysis for each season and episode. Lastly, we analyzed text from the tweets. This is achieved by removing hashtags, tags and emojis and keeping the main text of the tweets. The main goal is to perform sentiment analysis again, so we can understand how Twitter users feel about the ending of the show.</p>
+    	<p> First of all, with the Wiki dataset we have created the network showing how characters connect with one another. In order to do so, we downloaded the wikipages through an API so in the end, we have 80 files, as many as our characters. Then we obtained the scripts of each episode. At the end of our analysis, we applied sentiment analysis for each episode. Lastly, we analyzed text from the tweets. This is achieved by removing hashtags, tags and emojis and keeping the main text of the tweets. The main goal is to perform sentiment analysis again, so we can understand how Twitter users feel about the ending of the show.</p>
 
     	<h2 id = "network">Network Analysis</h2>
         <p>The first thing we are interested is to create a network to show how characters connect with each other. In order to so, we downloaded the wiki page containing information for every character, which is going to be a node in our network. In the character's page there are links to other characters pages, this indicating that these characters connect which means that we have an edge between them. The number of appearances in the characters page is going to be the weight of every edge. Doing this procedure for every character, we acquire the following network.</p>
@@ -44,31 +45,31 @@
         <img src="images/Network of Characters.png" style="width:100%;height:70%;margin-left:-15%;">
         <figcaption>Fig.1 - The network of characters</figcaption>
         </figure>
-        <p>When we draw the graph, we want to distinguish the house of every charcter belongs to and thus we color every node according to the different colors. (Our threshold is 3. If there are 3 or more members of a house we specify each house with a color. If number of house members are less than 3 they are colored as 'blue'.) There are some characters which doesn't belong to a known house. Therefore they are classified as 'Unknown' and their color is 'darkred'. We create a list with colors according to the character and we set every nodes size proportional to its degree. The following plot shows the degree distribution of the network.</p>
+        <p>When we draw the graph, we want to distinguish the house of every charcter belongs to and thus we color every node according to the different houses. (Our threshold is 3. If there are 3 or more members of a house we specify each house with a color. If number of house members are less than 3 they are colored as 'blue'.) There are some characters which doesn't belong to a known house. Therefore they are classified as 'Unknown' and their color is 'darkred'. We create a list with colors according to the character and we set every nodes size proportional to its degree. The following plot shows the degree distribution of the network.</p>
         <figure>
         <img src="images/deg_distr.jpg" style="width:100%;height:70%">
         <figcaption>Fig.2 - Degree distribution</figcaption>
         </figure>
         <p>The average degree of the network is 41.85, meaning that each node on average has a high number of links. It can be seen that the degree distriution resembles a poisson distribution, meaning that the network is similar to a random network.</p>
-        <p>As a next step, we want to examine how eigenvector centrality and betweenness centrality are going to affect our graph. Eigenvector centrality is a network measure where nodes tend to connect with nodes with the simiral eigenvector score. This measure can show us how a node can influence the graph. On the other hand betweenness centrality is a meausre based on the shortest path between nodes. The results after applying these two measures in our graph can be seen below.</p>
+        <p>As a next step, we want to examine how eigenvector centrality and betweenness centrality are going to affect our graph. Eigenvector centrality is a network measure where nodes tend to connect with nodes with the similar eigenvector score. This measure can show us how a node can influence the graph. On the other hand betweenness centrality is a meausre based on the shortest path between nodes. The results after applying these two measures in our graph can be seen below.</p>
         <figure>
         <img src="images/Eigenvector Centrality.png" style="width:100%;height:70%">
         <figcaption>Fig.3 - Network based on eigenvector centrality</figcaption>
         </figure>
-        <p>For the Eigenvector Centrality above, there are more than one nodes which has higher values of eigenvector centrality. Because during the series, there were so many powerful characters which have influenced series and stories a lot. Therefore the nodes which have bigger nodes are the ones affecting most.
+        <p>For the Eigenvector Centrality above, there are more than one nodes which has higher values of eigenvector centrality. Because during the series, there were so many powerful characters which have influenced the stories a lot. Therefore the bigger nodes are the ones affecting most.
         </p>
         <figure>
         <img src="images/Betweenness Centrality.png" style="width:100%;height:70%">
         <figcaption>Fig.4 - Network based on betweeness centrality</figcaption>
         </figure>
-        <p>For the Betweenness Centrality graph above, some characters has high values of betweennes centrality since they are really related in the movie as a part of the script. There are direct communication between this characters, therefore shortest path is created in this relation. Especially main characters should have higher values since they are connected to directly or at least they acts as a bridge along the shorthest path between nodes.</p>
-        <p>Nodes still remain colored according to the house they belong to but their size changes. Looking at the different houses as communities the marginality measure can be used, to examine whether these communities provide a good parition of the network. The maginality measure for this community is 0.3678, meaning that this is a decent partition of the network, however far away from the perfect partition.</p>
-        <p>So far we made the coloring of each node according to the house they represent. But is this the best partition that can be done? The final step is to examine if there is a better partition in our network. Using the Python Louvrain algorithm for community detection, a partition with marginality 0.4478 is found. This partition is therefore better than using the houses as community. The network created can be seen in the following drawing.</p>
+        <p>For the Betweenness Centrality graph above, some characters has high values of betweennes centrality since they are really related in the show as a part of the script. There are direct communication between these characters, therefore shortest path is created in this relation. Especially main characters should have higher values since they are connected to directly or at least they act as a bridge along the shorthest path between nodes.</p>
+        <p>Nodes still remain colored according to the house they belong to, but their size changes. Looking at the different houses as communities the marginality measure can be used, to examine whether these communities provide a good parition of the network. The maginality measure for this community is 0.3678, meaning that this is a decent partition of the network, however far away from the perfect partition.</p>
+        <p>So far we made the coloring of each node according to the house they represent. But is this the best partition that can be done? The final step is to examine if there is a better partition in our network. Using the Python Louvrain algorithm for community detection, a partition with marginality 0.4478 is found. This partition is therefore better than using the houses as community. The partition created can be seen in the following drawing.</p>
         <figure>
         <img src="images/Community Detection.png" style="width:100%;height:70%">
         <figcaption>Fig.5 - Network based on partition</figcaption>
         </figure>
-        <p>As we can see from the figure, there are less partition than the number of houses we have defined. Specifically, we notice about 5 to 6 different partitions but actually we have 15 houses. Looking a bit into the partition some interesting observations can be made. I.e. Ned Stark and Robert Baratheon are in the same partition, which makes sense since the two work closesly together in the first season, where Ned serves as hand to king Robert. Similarly Arya Stark and The Hound are in the same community, when they travel together thorugh Westeros.</p>
+        <p>As we can see from the figure, there are less partition than the number of houses we have defined. Specifically, we notice about 5 to 6 different partitions but actually we have 15 houses. Looking a bit into the partition some interesting observations can be made. I.e. Ned Stark and Robert Baratheon are in the same partition, which makes sense since the two work closesly together in the first season, where Ned serves as hand to king Robert. Similarly Arya Stark and The Hound are in the same community, again in line with the show, since they travel together through Westeros.</p>
         <p>In order to better understand the graph, it's better to create the confusion matrix for it. In the confusion matrix we compare the actual partitions of the nodes, which are the houses they are part and the partitions created by the algorithm. The result is shown in the matrix below. </p> 
         <table style="height: 330px; width: 600px; margin-left: 10%;">
         <tbody>
@@ -388,17 +389,17 @@
         </table>
         </p>
         <div id="gtx-trans" style="position: absolute; left: 147px; top: 11px;">&nbsp;</div>
-        <p>Only the houses of Tarly, Karstark, Tyrell, Martell, Greyjoy and Arryn have all members just assigned to one specific partition. We don't expect Stark, Baratheon, Targaryen, Lannister houses to be assigned just to one specific partition because member of these houses have very important characters for the series. For that reason, members of these house are being involved in different partitions upon the subjects such as wars, complots, suicides, assassinations  etc.</p>
+        <p>Only the houses of Tarly, Karstark, Tyrell, Martell, Greyjoy and Arryn have all members just assigned to one specific partition. We don't expect Stark, Baratheon, Targaryen, Lannister houses to be assigned just to one specific partition because member of these houses are very important characters for the series. For that reason, members of these houses are being involved in different partitions upon the subjects such as wars, complots, suicides, assassinations  etc.</p>
 
-        <h2 id = "series-development">Evolution of the Show</h2>
-        <p>Over the eight seasons that the show has run, the fans have become increasingly frustrated. The general opinion among the fans is that the quality of the show has been declining, especially over the last two seasons. To investigate any reason for this perception, that the show has gotten worse, the wikipages can be used. Each page contains a section describing the characters actions in each season. This section will then describe which other characters the given character is interacting with throughout each season. By extracting this section and finding the links in each season, eight networks can be created that describe the interactions between the characters in the given season. The plot below shows the node and edge count for each season graph.</p>
+        <h2 id = "series-development">Series Development</h2>
+        <p>Over the eight seasons that the show has run, the fans have become increasingly frustrated. The general opinion among the fans is that the quality of the show has been declining, especially over the last two seasons. To investigate any reason for this perception, that the show has gotten worse, the wikipages can be used. Each page contains a section describing the characters actions in each season. This section will then describe which other characters the given character is interacting with throughout the season. By extracting this section and finding the links in each season, eight networks can be created that describe the interactions between the characters in the given season. The plot below shows the node and edge count for each season graph.</p>
 
         <figure>
         <img src="images/season_graphs.png" style="width:100%;height:70%">
         <figcaption>Fig.6 - Season node and edge count</figcaption>
         </figure>
 
-        <p>Looking at the number nodes for each season (graph on the left), it is clear that in the first six seasons that number of characters is rising, since new characters is introduced. In the 7th and 8th season the number of nodes drastically decrease. For the edge count a similar pattern can be seen. The number of edges for each season is steadily declining throughout all seasons, however again there is a local maximum at season six and then a steep decline for the final two seasons.</p>
+        <p>Looking at the number of nodes for each season (graph on the left), it is clear that in the first six seasonsm the number of characters is rising, since new characters is introduced. In the 7th and 8th season the number of nodes drastically decrease. For the edge count a similar pattern can be seen. The number of edges for each season is steadily declining throughout all seasons, however again there is a local maximum at season six and then a steep decline for the final two seasons.</p>
         <p>A final thing to investigate on the individual season graphs is the average degree. The following plot shows the average degree for each of the graph.</p>
 
         <figure>
@@ -410,48 +411,42 @@
         <p>Overall the trend is that the number of important characters is decreasing throughout the show. This makes sense since the show is known for killing off some of the most loved characters. This can, however, also be one of the reasons why the fans feels it is getting worse. One of the strengths of the show has always been the diverse gallery of characters, and since the number of characters is declining, and therefore the amount of interaction between the characters will also decline, the show can't provide the same type of drama. This also supports the claim that the show has become more focused on creating great action scenes, rather than developing the characters, in the final seasons.</p>
 
     	<h2 id = "text">Text Analysis</h2>
-        <p>In our text analysis we are going to examine the sentiment distribution throughout the seasons in overall and the episodes and we wil focus on the analysis of the final season based on tweets. First of all, we calculated sentiment in all seasons based on the plot summary of each one of them. The sentiment distribution can be seen in the following figure.</p>
-        <figure>
-        <img src="images/season_sentiments.png" style="width:100%;height:70%">
-        <figcaption>Fig.8 - Seasons sentiment analysis</figcaption>
-        </figure>
-        <p>As we can see, the average sentiment is high which means people liked the show. However, the peak can be noticed in season 5, where there were great battles and major deaths. For those who have watched the show (those who haven't sorry for the spoiler), in the end of 5th season Jon Snow died and it a huge surprise for the fans because they couldn't believe it. After that, there is a declination trend and the biggest one being in season 7, since winter was coming for all of them. As mentioned above, the show is based on novels and the producers were trying to end the show thus skipping many details from the books. This is why we see this decline in after season 5.</p>
-        <p>Afterwards, we are going to calculate the sentiment for each episode separately according to this plot. The variance of sentiment can be shown in the plot followed.</p>
+        <p>In our text analysis we are going to examine the sentiment distribution of the episodes and we wil focus on the analysis of the final season based on tweets. First, we are going to calculate the sentiment for each episode based on the script of the episode. The variance of sentiment can be shown in the plot followed.</p>
         <figure>
         <img src="images/episode_sentiments.png" style="width:100%;height:70%">
-        <figcaption>Fig.9 - Episodes sentiment analysis</figcaption>
+        <figcaption>Fig.8 - Episodes sentiment analysis</figcaption>
         </figure>
-        <p>As happened in the season analysis, the decline in certain episodes is connected to the death of favorite characters. For example, the drop in episode 9 is connected to the death of Edward Stark, a character every fan loved. The biggest drop can be seen in episode 49 and is also linked to the death of a little girl, something that made fans sad. As an overall, there's no much difference in the sentiment of every episode. And it is so normal to have up and downs between the episodes.</p>
-        <p>Another thing that could point to a change in the show, was the amount of dialog in the show. To investigate this, the number of meaningfull words, meaning words that aren't stopwords, have been summed for each episode. The result is shown in Figure 8. </p>
+        <p>From the plot of sentiments for each episode it can be seen that there is no overall trend of either increasing or declining sentiment for the scripts. Most of the sentiment scores are lying around 5.8, and then there are a few outliers with lower sentiment, which probably can be explained by an episode with a sudden death of one or more characters.</p>
+        <p>Another thing that could point to a change in the show, is the amount of dialog. To investigate this, the number of meaningfull words, meaning words that aren't stopwords, have been summed for each episode. The result is shown in Figure 8. </p>
         <figure>
         <img src="images/episode_words.png" style="width:100%;height:70%">
-        <figcaption>Fig.10 - Episode Wordcount</figcaption>
+        <figcaption>Fig.9 - Episode Wordcount</figcaption>
         </figure>
-        <p>Again there is not a clear trend of the amount of dialog going down, but there is still some interesting points to make. Looking at the first 30 episodes there is a slight tendency for the word count to increase. Then the trend turns towards less dialog, and then in the final two seasons the amount of dialog in the episode tend to vary a lot. This could point towards the point that the final seasons had more focus on the action packed scenes, and therefore the wordcount varies from the very dialog-heavy episodes, then followed by a battle episode which is very low in dialog.</p>
+        <p>Again there is not a clear trend of the amount of dialog going down or up, but there is still some interesting points to make. Looking at the first 30 episodes there is a slight tendency for the word count to increase. Then the trend turns towards less dialog, and then in the final two seasons the amount of dialog in the episode tend to vary a lot. This could point towards the point that the final seasons had more focus on the action packed scenes, and therefore the wordcount varies from the very dialog-heavy episodes, then followed by a battle episode which is very low in dialog.</p>
         <p>The last part of our analysis includes the sentiment analysis of the final season based on tweets. The first step is computing <a href = "https://en.wikipedia.org/wiki/Tf%E2%80%93idf">tf-idf</a> in our dataset and the result is to get the most frequent words of it. So we obtained the wordcloud which shows these terms, proportional to their font size.</p>
         <figure>
         <img src="images/GOTwordcloud.png" style="width:100%;height:70%">
-        <figcaption>Fig.11 - Game of Thrones WordCloud</figcaption>
+        <figcaption>Fig.10 - Game of Thrones WordCloud</figcaption>
         </figure>
         <p>As can be noticed, there are terms like <i>last</i>, <i>season</i>, <i>night</i>, <i>show</i>, <i>snow</i>, <i>throne</i> and <i>battle</i> are some of the examples. These terms are explicitly related to the final season. Afterwards, we have performed sentiment analysis.</p>
         <figure>
         <img src="images/sentimentPlot.png" style="width:100%;height:70%">
-        <figcaption>Fig.12 - Tweet Sentiments</figcaption>
+        <figcaption>Fig.11 - Tweet Sentiments</figcaption>
         </figure>
         <p>From the plot above, we can conclude that by putting a threshold in the sentiment value, we can distinct the tweets in two groups: positive and negatives. The wordclouds are shown below.</p>
         <figure>
         <img src="images/GOTwordcloud Positive Tweets.png" style="width:100%;height:70%">
-        <figcaption>Fig.13 - Positive Tweets Wordcloud</figcaption>
+        <figcaption>Fig.12 - Positive Tweets Wordcloud</figcaption>
         </figure>
         <figure>
         <img src="images/GOTwordcloudNegative Tweets.png" style="width:100%;height:70%">
-        <figcaption>Fig.14 - Negative Tweets Wordcloud</figcaption>
+        <figcaption>Fig.13 - Negative Tweets Wordcloud</figcaption>
         </figure>
-        <p>From the wordclouds the tweets are not explicitly distinguished but some of the words are interpretable regarding their meanings in the series and generally. For example, in the negative wordcloud <i>never</i> can imply a negative sentiment. There is also the word <i>love</i> has a positive sentiment however, inside the tweet with hashtags and other words it can be affected for example, love between some characters may not be approved by some fans and it may result <i>love</i> in the negative wordcloud. Regarding positive wordcloud, the <i>night</i> and <i>tonight</i> terms might refer the excitement of the audience for the release of a new episode.</p>
+        <p>From the wordclouds the tweets are not explicitly distinguished but some of the words are interpretable regarding their meaning in the series and generally. For example, in the negative wordcloud <i>never</i> can imply a negative sentiment. There is also the word <i>love</i>, which has a positive sentiment. However, inside the tweet with hashtags and other words it can be affected for example, love between some characters may not be approved by some fans and it may result <i>love</i> in the negative wordcloud. Regarding positive wordcloud, the <i>night</i> and <i>tonight</i> terms might refer the excitement of the audience for the release of a new episode.</p>
         <p>The final analysis is relevant to finding the average sentiment for each character and showing the comparison. The result is shown in the plot below.</p>
         <figure>
         <img src="images/AverageSentimentforCharacter.png" style="width:100%;height:70%">
-        <figcaption>Fig.15 - Average characters' sentiment</figcaption>
+        <figcaption>Fig.14 - Average characters' sentiment</figcaption>
         </figure>
         <p>From this plot we can see that suprisingly that Randyll Tarly is the most liked character despite the fact that he appeared in a few episodes but maybe the characters were impressed by the actor's performance. The least liked is Yohn Royce, since he appeared in a few episodes as well and fans didn't give any attention to him.</p>
         <p>To investigate whether there is a connection between the fans opinion on the characters and there links in the network community detection is used. The characters in the network are divided into three communities. One for the characters that is liked, one for the disliked characters, and the final for those not mentioned on twitter. This partition has a marginality measure of 0.2, meaning that it is not a very good partition of the network.</p>

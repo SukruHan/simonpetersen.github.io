@@ -13,21 +13,14 @@ article {
     /* settings for wallpaper background*/
     background-color: white;
     opacity: 0.7;
-    margin-left: 25%;
-    /*margin-top: 3%;*/
+    display: block;
     text-align: center;
-    width: 50%;
+    width: 65%;
+    margin-left: auto;
+    margin-right: auto;
+    justify-content: center;
     height: 100%;
-    position: fixed;
     overflow: scroll;
-
-    /* settings for collage1 background*/
-  /*  background-color: white;
-    margin-left: 20%;
-    margin-top: 3%;
-    text-align: center;
-    width: 60%;
-    position: fixed;*/
 }
 
 .label {
@@ -42,25 +35,7 @@ article {
 }
 
 #header {
-/*    margin: 0;
-    padding-left: 40px;
-    margin-top: 5%;
-    font-size:300%;*/
-/*    position: relative;
-    font-family: sans-serif;
-    text-transform: uppercase;
-    font-size: 2em;
-    letter-spacing: 4px;
-    overflow: hidden;
-    background: linear-gradient(90deg, #000, #fff, #000);
-    background-repeat: no-repeat;
-    background-size: 80%;
-    animation: animate 3s linear infinite;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: rgba(255, 255, 255, 0);*/
-    /*background-image: url(https://media.giphy.com/media/26BROrSHlmyzzHf3i/giphy.gif);*/
     background-image: url(https://i.makeagif.com/media/7-06-2015/Mc-qZI.gif);
-    /*background-image: url(https://thumbs.gfycat.com/ScalyPointlessArmadillo-size_restricted.gif);*/
     background-size: cover;
     color: transparent;
     -moz-background-clip: text;
